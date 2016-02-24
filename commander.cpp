@@ -35,7 +35,6 @@ Thread threadSerial(threadSerial_run, 50);
 void threadNRF_run();
 Thread threadNRF(threadNRF_run, 1000); // Starts listening after 1sec, then set itself to 5ms
 
-long lastMessageTimestamp = 0;
 
 // ====================================
 //           INITIALIZATION
@@ -201,7 +200,7 @@ void threadIddleDetection_run(){
   if(Robot::state != ACTIVE)
     return;
 
-  if(millis() - lastMessageTimestamp > RADIO_TIMEOUT_TO_IDDLE){
+  if(millis() - Robot::lastTimeActive > RADIO_TIMEOUT_TO_IDDLE){
     Robot::setState(IDDLE);
     Robot::doBeep(Robot::getRobotID(), 50);
   }
@@ -270,17 +269,17 @@ void threadNRF_run(){
   radio->send(radioBufferOut, 3);
   radio->waitPacketSent();
 
-    // Got message. Robot is now Active if message was an action message
-    if(Robot::alarm == NONE){
-      if(Robot::state == IDDLE && activate){
-        Robot::setState(ACTIVE);
-        Robot::doBeep(1, 100);
-    }
+  // Got message. Robot is now Active if message was an action message
+  if(Robot::alarm == NONE){
+    if(Robot::state == IDDLE && activate){
+      Robot::setState(ACTIVE);
+      Robot::doBeep(1, 100);
+  }
 
-      // Save timestamp of message
-      lastMessageTimestamp = millis();
-      // Serial.print(" ");
-      // Serial.print(lastMessageTimestamp - start);
-      // Serial.print(" ms\n");
+    // Save timestamp of message
+    Robot::lastTimeActive = millis();
+    // Serial.print(" ");
+    // Serial.print(lastMessageTimestamp - start);
+    // Serial.print(" ms\n");
   }
 }

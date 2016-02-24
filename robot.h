@@ -33,6 +33,11 @@ public:
   static RobotState state;
 
   /*
+    Last time when robot was Active
+  */
+  static unsigned long lastTimeActive;
+
+  /*
     Current alarm of the robot (Errors)
   */
   static RobotAlarm alarm;

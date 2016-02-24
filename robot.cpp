@@ -55,11 +55,15 @@ int Robot::getRobotID(){
 
 RobotState Robot::state = IDDLE;
 RobotAlarm Robot::alarm = NONE;
+Robot::lastTimeActive = 0;
 
+// Sets the robot's state
 void Robot::setState(RobotState _state){
   state = _state;
 
-  if(state == IDDLE)
+  if(_state == ACTIVE)
+    Robot::lastTimeActive = millis();
+  else if(state == IDDLE)
     Motors::stop();
 };
 
