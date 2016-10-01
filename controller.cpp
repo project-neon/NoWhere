@@ -155,7 +155,7 @@ void threadController_run(){
 
   // Checks if robot is in IDDLE state. Skip if so...
   if(Robot::state == IDDLE){
-    Motors::stop();
+    // Motors::stop();
     return;
   }
 

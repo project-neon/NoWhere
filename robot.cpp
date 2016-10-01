@@ -55,7 +55,7 @@ int Robot::getRobotID(){
 
 RobotState Robot::state = IDDLE;
 RobotAlarm Robot::alarm = NONE;
-Robot::lastTimeActive = 0;
+unsigned long Robot::lastTimeActive = 0;
 
 // Sets the robot's state
 void Robot::setState(RobotState _state){

@@ -46,7 +46,7 @@ void Commander::init(){
 
   // Initialize Radio
   LOG("Radio::init\n");
-  radio = new RH_NRF24(PIN_RADIO_CE, PIN_RADIO_CSN);
+  radio = new RH_NRF24(PIN_RADIO1_CE, PIN_RADIO1_CSN);
 
   // radioManager = new RHReliableDatagram(*radio, 2);
   // radioManager->setRetries(1);
@@ -215,16 +215,16 @@ void threadSerial_run(){
   LOG("got:"); LOG(got); LOG("\n");
 
   if(got == '1')
-    Motors::setPower(50, 0);
+    Motors::setPower(100, 0);
 
   else if(got == '2')
-    Motors::setPower(-50, 0);
+    Motors::setPower(-100, 0);
 
   else if(got == '3')
-    Motors::setPower(0, 50);
+    Motors::setPower(0, 100);
 
   else if(got == '4')
-    Motors::setPower(0, -50);
+    Motors::setPower(0, -100);
 
   else if(got == '0')
     Motors::stop();

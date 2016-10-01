@@ -7,51 +7,57 @@
 //
 // PINS
 //
-#define PIN_LED1               A1
-#define PIN_LED2               A2
+#define PIN_LED1               12
+#define PIN_LED2               13
 
-#define PIN_BUZZER             A3
+#define PIN_BUZZER             A5
 
-#define PIN_M1_EN              6
-#define PIN_M1_IN1             4
-#define PIN_M1_IN2             3
+#define PIN_M1_EN              5
+#define PIN_M1_IN1             A0
+#define PIN_M1_IN2             A1
 
-#define PIN_M2_EN              5
-#define PIN_M2_IN1             7
-#define PIN_M2_IN2             8
+#define PIN_M2_EN              6
+#define PIN_M2_IN1             A4
+#define PIN_M2_IN2             4
 
-#define PIN_BTN                A6
+#define PIN_BTN                0
 
-#define PIN_VBAT               A0
+#define PIN_VBAT               A3
 
-#define PIN_RADIO_CE           9
-#define PIN_RADIO_CSN          10
+#define PIN_RADIO1_CE          8
+#define PIN_RADIO1_CSN         9
+#define PIN_RADIO1_INTERRUPT   0
 
+#define PIN_RADIO2_CE          10
+#define PIN_RADIO2_CSN         11
 
 //
 // Project
 //
 #define PROJECT_NAME           "SlaveFirmware"
-#define PROJECT_VERSION        "v0.02"
+#define PROJECT_VERSION        "v2.1"
 
 
 //
 // Serial DEBUG
 //
-#define SERIAL_SPEED           57600
+#define SERIAL_SPEED           115200
 #define LOG                    Serial.print
 
 
 //
 // Motors config (H-Bridge)
 //
-#define MOTOR_ABS_MAX          250
+#define MOTOR_ABS_MAX          255
 
 
 //
 // VBat Reader
 //
-#define VBAT_VOLTAGE(adc)      ((adc - 40.3) / 88.3)
+#define BAT_R1           22000
+#define BAT_R2           10000
+#define BAT_DROP         0.26
+#define VBAT_VOLTAGE(adc)      (adc / (1023 / 5.0)) * (BAT_R1 + BAT_R2) * (1.0 / BAT_R2) + BAT_DROP
 
 #define VBAT_ALARMED           7.10
 #define VBAT_WARNED            7.40

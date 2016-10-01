@@ -23,7 +23,7 @@ void System::init(){
 
   // Initialize Serial and Wait to be ok
   Serial.begin(SERIAL_SPEED);
-  while(!Serial);
+  // while(!Serial);
   delay(50);
 
   LOG("\n===== "); LOG(PROJECT_NAME); LOG(" =====\n");
@@ -47,7 +47,7 @@ void threadBatteryChecker_run(){
   // LOG("VBAT: "); LOG(Robot::vbat); LOG(" ["); LOG(analogVal); LOG("]\n");
 
   if(Robot::vbat < VBAT_ALARMED){
-    if(++alerts > 3){
+    if(++alerts == 3){
       Robot::setAlarm(ALARM_LOW_BATTERY);
       Robot::setBeep(ALARM);
     }
@@ -66,17 +66,30 @@ void threadBatteryChecker_run(){
 */
 void threadWatchdog_run(){
   static bool ledState = false;
+  static bool ledStateInvert = false;
 
   // Toggle state
   ledState = !ledState;
+  ledStateInvert = false;
 
   // Check for ALARM
-  if(Robot::alarm != NONE)
-    ledState = true;
+  // if(Robot::alarm != NONE)
+    // ledState = true;
+  if(Robot::alarm == NONE && Robot::state == IDDLE){
+    // State is iddle without error
+    threadWatchdog.setInterval(ledState ? 250 : 750);
+  }else if(Robot::alarm == NONE && Robot::state == ACTIVE){
+    // State is active (communicating) and not error
+    threadWatchdog.setInterval(ledState ? 750 : 250);
+  }else{
+    threadWatchdog.setInterval(ledState ? 250 : 250);
+    ledStateInvert = true;
+  }
 
   // Toggles Led
-  digitalWrite(PIN_LED2, ledState);
+  digitalWrite(PIN_LED1, ledState);
+  digitalWrite(PIN_LED2, ledState ^ ledStateInvert);
 
   // Set timeout acordingly to Robot's state
-  threadWatchdog.setInterval(Robot::state == IDDLE ? 500 : 100);
+  // threadWatchdog.setInterval(Robot::state == IDDLE ? 250 : 500);
 }
