@@ -77,11 +77,11 @@ public:
   //         ATTITUDE/ORIENTATION
   // ====================================
 
-  static Quaternion q;
-
-  static VectorFloat gravity;
-
-  static float ypr[3];
+  static float dx;
+  static float dy;
+  static float dt;
+  static bool onFloor;
+  static bool inclinated;
 
 };
 

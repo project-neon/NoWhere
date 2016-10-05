@@ -9,7 +9,6 @@
 #include "system.h"
 
 void threadBeeper_run();
-
 Thread threadBeeper(threadBeeper_run, 0);
 
 
@@ -154,7 +153,8 @@ void threadBeeper_run(){
 //         ATTITUDE/ORIENTATION
 // ====================================
 
-
-Quaternion Robot::q = Quaternion();
-VectorFloat Robot::gravity = VectorFloat();
-float Robot::ypr[3] = {0,0,0};
+float Robot::dx = 0;
+float Robot::dy = 0;
+float Robot::dt = 0;
+bool Robot::onFloor = false;
+bool Robot::inclinated = false;
