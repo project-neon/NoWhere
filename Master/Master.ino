@@ -2,13 +2,11 @@
 
 // External Libraries
 #include <SPI.h>
+#include <RF24.h>
 #include <Wire.h>
 #include <I2Cdev.h>
 #include <Thread.h>
-#include <RH_NRF24.h>
 #include <ThreadController.h>
-// #include <RHReliableDatagram.h>
-#include <MPU6050_6Axis_MotionApps20.h>
 
 
 // Custom Util

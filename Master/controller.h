@@ -20,16 +20,12 @@ public:
   //           CONTROLL TARGETS
   // ====================================
 
+  static float targetX;
   static float targetY;
   static float targetTheta;
 
-  static TargetType targetYType;
-  static TargetType targetThetaType;
-
-  static void setTargetY(TargetType type, float val);
-  static void setTargetTheta(TargetType type, float val);
+  static void setTarget(float targetX, float targetY, float targetTheta);
   static void setPIDConstants(float kp, float ki, float kd, float iLimit);
-
 };
 
 
