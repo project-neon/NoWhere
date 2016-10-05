@@ -61,6 +61,7 @@
 
 #define VBAT_ALARMED           7.10
 #define VBAT_WARNED            7.40
+#define VBAT_USB               5.10
 
 
 //

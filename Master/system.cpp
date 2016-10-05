@@ -46,12 +46,12 @@ void threadBatteryChecker_run(){
   Robot::vbat = VBAT_VOLTAGE(analogVal);
   // LOG("VBAT: "); LOG(Robot::vbat); LOG(" ["); LOG(analogVal); LOG("]\n");
 
-  if(Robot::vbat < VBAT_ALARMED){
+  if(Robot::vbat < VBAT_ALARMED && Robot::vbat > VBAT_USB){
     if(++alerts == 3){
       Robot::setAlarm(ALARM_LOW_BATTERY);
       Robot::setBeep(ALARM);
     }
-  }else if(Robot::vbat < VBAT_WARNED){
+  }else if(Robot::vbat < VBAT_WARNED && Robot::vbat > VBAT_USB){
     if(alerts <= 0)
       Robot::setBeep(WARN);
   }else{
