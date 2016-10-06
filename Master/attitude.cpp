@@ -46,17 +46,17 @@ void threadOdometry_run(){
       Robot::inclinated,
       Robot::onFloor);
 
-    if(success){
-      Serial.print(Robot::onFloor);
-      Serial.print("\t");
-      Serial.print(Robot::inclinated);
-      Serial.print("\t");
-      Serial.print(Robot::dx);
-      Serial.print("\t");
-      Serial.print(Robot::dy);
-      Serial.print("\t");
-      Serial.print(Robot::dt);
-      Serial.println();
-    }
+    // if(success){
+    //   Serial.print(Robot::onFloor);
+    //   Serial.print("\t");
+    //   Serial.print(Robot::inclinated);
+    //   Serial.print("\t");
+    //   Serial.print(Robot::dx);
+    //   Serial.print("\t");
+    //   Serial.print(Robot::dy);
+    //   Serial.print("\t");
+    //   Serial.print(Robot::dt);
+    //   Serial.println();
+    // }
   }
 }
