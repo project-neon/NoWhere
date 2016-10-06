@@ -1,8 +1,12 @@
 #include <SPI.h>
+#include <Wire.h>
 #include <avr/pgmspace.h>
 
 #define PIN_LED             5
 #define PIN_MOUSE_NCS       10
+
+#define INTERRUPT_MOUSE     0
+#define INTERRUPT_IMU       1
 
 #define LOOP_TIME           5
 #define SQUAL_THRESHOLD_UP  10
@@ -11,8 +15,6 @@
 // Mouse Flags
 long x;
 long y;
-
-//
 
 // Debug purposes
 bool DEBUG = false;
@@ -37,12 +39,24 @@ void setup(){
   SPI.setBitOrder(MSBFIRST);
   SPI.setClockDivider(8);
 
+  // Initialize I2C
+  Wire.begin();
+  TWBR = ((16000000L / 400000L) - 16) / 2;
+  delay(1);
+
   // Initialize Mouse
   if(!Mouse_init(PIN_MOUSE_NCS))
     haltLED(2);
 
   // Link mouse interrupt to method
   // attachInterrupt(0, onMouseMove, FALLING);
+
+  // Initialize IMU
+  if(!IMU_init())
+    haltLED(3);
+
+  // Link IMU Interrupt to method
+  attachInterrupt(INTERRUPT_IMU, onIMURead, RISING);
 }
 
 char in;
@@ -70,7 +84,10 @@ void loop(){
   }
 
   // Synchronize loop
-  while(millis() - lastRun < LOOP_TIME);
+  while(millis() - lastRun < LOOP_TIME){
+    // Keep reading IMU
+    IMU_read();
+  }
   lastRun = millis();
 
   // Read mouse motion
@@ -116,6 +133,12 @@ void loop(){
     Serial.print(dx);
     Serial.write('\t');
     Serial.print(dy);
+    Serial.write('\t');
+    Serial.print(getYPR(0));
+    Serial.write('\t');
+    Serial.print(getYPR(1));
+    Serial.write('\t');
+    Serial.print(getYPR(2));
     // Serial.write('\t');
     // Serial.print(millis() - lastRun);
     Serial.print("\r\n");
