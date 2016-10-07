@@ -314,7 +314,7 @@ bool Mouse_init(int PinCSN){
   Mouse_write(REG_LASER_CTRL0, laser_ctrl0 & 0xf0 );
 
   // Set to 200DPI
-  Mouse_write(REG_Configuration_I, 0x01);
+  Mouse_write(REG_Configuration_I, uint8_t(20));
 
   // Finish up setup
   delay(1);
