@@ -7,13 +7,14 @@
 #include "robot.h"
 #include "system.h"
 #include "motors.h"
+#include "attitude.h"
 #include "controller.h"
 
 //
 // Local variables/objects
 //
 void threadController_run();
-Thread threadController(threadController_run, 10);
+Thread threadController(threadController_run, 0);
 
 void threadCheckInclinationAlarm_run();
 Thread threadCheckInclinationAlarm(threadCheckInclinationAlarm_run, 500);
@@ -21,9 +22,9 @@ Thread threadCheckInclinationAlarm(threadCheckInclinationAlarm_run, 500);
 //
 // PID's
 //
-PID pidX(0.2f, 2.5f, 0.0f, 40);
-PID pidY(0.2f, 2.5f, 0.0f, 40);
-PID pidTheta(0.2f, 2.5f, 0.0f, 40);
+PID pidX(0.2f, 2.5f, 0.0f, 100);
+PID pidY(3.0f, 0.0f, 0.0f, 0);
+PID pidTheta(1.0f, 0.0f, 0.0f, 0);
 
 
 // ====================================
@@ -84,15 +85,28 @@ void threadCheckInclinationAlarm_run(){
 
 int logs = 0;
 void threadController_run(){
-  static long lastRun;
-  float dt;
+  static unsigned long lastNow;
+  static unsigned long now;
+  static float lastRate;
+  static float rateAvgThetha;
+  static float rateThetha;
+  static float rateSpeed;
+  static float dt;
+  static float pwrLeft;
+  static float pwrRight;
+  static bool wasOnFloor = true;
 
-  logs++;
+  // Checks if new data is available for processing
+  if(!Attitude::newData)
+    return;
+
+  // Lower Flag
+  Attitude::newData = false;
 
   // Compute dt
-  long now = millis();
-  dt = (now - lastRun) / 1000.0;
-  lastRun = now;
+  now = micros();
+  dt = (now - lastNow) / 1000000.0;
+  lastNow = now;
 
   // Skip if dt is too large or too small
   if(dt > 0.1 || dt <= 0.0){
@@ -101,38 +115,86 @@ void threadController_run(){
   }
 
   // Compute Degrees/second
-  float rate = Robot::dt;
+  // angulo = Robot::theta
+  // dt = dt
+  rateThetha = (Robot::theta - lastRate);
+  if (rateThetha > 180.0)
+    rateThetha -= 360.0;
+  else if (rateThetha < -180.0)
+    rateThetha += 360.0;
+  rateThetha = rateThetha / dt;
+  lastRate = Robot::theta;
 
   // Rate is absurd? Skip this controll.
-  if(rate < -360 || rate > 360){
-    LOG(" ! Absurd rate "); LOG(rate); LOG("\n");
+  if(rateThetha < -1000 || rateThetha > 1000){
+    LOG(" ! Absurd rateThetha "); LOG(rateThetha); LOG("\n");
     return;
+  }
+
+  // Compute Y Speed rate
+  rateSpeed = Robot::dy / dt / 1516.0;
+
+  // rateAvgThetha += (rateThetha - rateAvgThetha) * 0.3;
+
+  // Check if robot is not touching ground
+  if(!Robot::onFloor){
+    Motors::stop();
+    pidY.reset();
+    pidX.reset();
+    pidTheta.reset();
+    pwrLeft = 0;
+    pwrRight = 0;
+    if(wasOnFloor)
+      Robot::doBeep(1, 80);
+
+    wasOnFloor = false;
+
+    return;
+  }else if(!wasOnFloor){
+    Robot::doBeep(2, 80);
+    wasOnFloor = true;
   }
 
   // Checks if robot is in IDDLE state. Skip if so...
   if(Robot::state == IDDLE){
     // Motors::stop();
-    return;
+    // return;
   }
 
+  // Calculate
+  // float errorTheta = Controller::targetTheta - rateThetha;
+  pidTheta.setTarget(Controller::targetTheta);
+  pidY.setTarget(Controller::targetY);
+
+  float speedTheta = pidTheta.update(rateThetha, dt);
+  float speedY = pidY.update(rateSpeed, dt);
 
   // Final Speed
-  float speedY = 0;
-  float speedTheta = 0;
+  float accLeft  = speedY + speedTheta;
+  float accRight = speedY - speedTheta;
 
-  pidTheta.setTarget(Controller::targetTheta);
-  speedTheta = pidTheta.update(rate, dt);
+  pwrLeft  = pwrLeft  + accLeft * dt;
+  pwrRight = pwrRight + accRight * dt;
 
-  float left = speedY - speedTheta;
-  float right = speedY + speedTheta;
+  // Limit Pwers
+  pwrLeft  = min(100, max(-100, pwrLeft));
+  pwrRight = min(100, max(-100, pwrRight));
+
+  Motors::setPower(pwrLeft, pwrRight);
 
   // Log once in a while
-  if(logs % 50 == 0){
-    LOG("    x: "); LOG(Controller::targetX);
-    LOG("    y: "); LOG(Controller::targetY);
-    LOG(" thet: "); LOG(Controller::targetTheta);
-    LOG("\n");
-  }
+  // if(logs++ % 50 == 0){
+  float errY = pow(Controller::targetY - rateSpeed, 2);
+  float errTheta = pow(Controller::targetTheta - rateThetha, 2);
+    LOG("\tdt: "); LOG(dt * 1000);
+    LOG("\terrY: "); LOG(errY);
+    LOG("\terrT: "); LOG(errTheta);
+    // LOG("\tthet: "); LOG(rateThetha);
+    // LOG("\tthet: "); LOG(rateSpeed);
+    // LOG("\tx: "); LOG(Controller::targetX);
+    // LOG("\ty: "); LOG(Controller::targetY);
+    // LOG("\tthet: "); LOG(Controller::targetTheta);
+    LOG("\r\n");
+  // }
 
-  Motors::setPower(right, left);
 }

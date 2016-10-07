@@ -153,8 +153,8 @@ void threadBeeper_run(){
 //         ATTITUDE/ORIENTATION
 // ====================================
 
-float Robot::dx = 0;
-float Robot::dy = 0;
-float Robot::dt = 0;
+int16_t Robot::dx = 0;
+int16_t Robot::dy = 0;
+float Robot::theta = 0;
 bool Robot::onFloor = false;
 bool Robot::inclinated = false;

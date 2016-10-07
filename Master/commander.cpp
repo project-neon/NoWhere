@@ -218,10 +218,12 @@ void threadSerial_run(){
   else if(got == '4')
     Motors::setPower(0, -100);
 
-  else if(got == '0')
+  else if(got == '8'){
+    Controller::setTarget(0, 0, -90);
+  }else if(got == '0'){
+    Controller::setTarget(0, 0, 0);
     Motors::stop();
-
-  else if(got == 'b'){
+  }else if(got == 'b'){
     LOG("bat: "); LOG(Robot::vbat); LOG("v\n");
 
   }else if(got == 'i'){

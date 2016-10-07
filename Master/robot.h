@@ -77,9 +77,9 @@ public:
   //         ATTITUDE/ORIENTATION
   // ====================================
 
-  static float dx;
-  static float dy;
-  static float dt;
+  static int16_t dx;
+  static int16_t dy;
+  static float theta;
   static bool onFloor;
   static bool inclinated;
 
