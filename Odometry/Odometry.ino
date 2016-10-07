@@ -96,7 +96,7 @@ void loop(){
   Mouse_readXY(dx, dy);
 
   // Read IMU
-  float dt = 0;
+  float dt = getYPR(0);
   // TODO
 
   // Check if it's on the floor
@@ -108,13 +108,13 @@ void loop(){
   // Sends raw data if not in DEBUG mode
   if(!DEBUG){
     // Create empty frame
-    uint8_t frame[5];
+    uint8_t frame[9];
 
     // Make up packet with data
     makeOdometryPacket(frame, dx, dy, dt, inclinated, onFloor);
 
     // Send to serial
-    Serial.write(frame, 5);
+    Serial.write(frame, 9);
     // Serial.print(frame[0], BIN);
     // Serial.print(" ");
     // Serial.print(frame[1], BIN);
@@ -123,11 +123,19 @@ void loop(){
     // Serial.print(" ");
     // Serial.print(frame[3], BIN);
     // Serial.print(" ");
-    // Serial.println(frame[4], BIN);
+    // Serial.print(frame[4], BIN);
+    // Serial.print(" ");
+    // Serial.print(frame[5], BIN);
+    // Serial.print(" ");
+    // Serial.print(frame[6], BIN);
+    // Serial.print(" ");
+    // Serial.print(frame[7], BIN);
+    // Serial.print(" ");
+    // Serial.println(frame[8], BIN);
   }
 
   // Shows a human readable string if debug mode
-  if(DEBUG){
+  if(DEBUG && !MEASURE){
     // Serial.print(MouseMoved);
     // Serial.write('\t');
     Serial.print(dx);
