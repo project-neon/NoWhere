@@ -7,6 +7,9 @@ public:
 
   static void init();
 
+  // Indicates that a new data is available for processing
+  static bool newData;
+
 };
 
 #endif

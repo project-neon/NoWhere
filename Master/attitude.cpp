@@ -11,7 +11,7 @@
 #include "attitude.h"
 
 
-#define ODOMETRY_PACKET_SIZE    5
+#define ODOMETRY_PACKET_SIZE    9
 
 // Checks for incoming packets from Odometry
 void threadOdometry_run();
@@ -24,6 +24,8 @@ void Attitude::init(){
 
   system.add(&threadOdometry);
 }
+
+bool Attitude::newData = false;
 
 uint8_t buffer[ODOMETRY_PACKET_SIZE];
 void threadOdometry_run(){
@@ -42,21 +44,25 @@ void threadOdometry_run(){
       buffer,
       Robot::dx,
       Robot::dy,
-      Robot::dt,
+      Robot::theta,
       Robot::inclinated,
       Robot::onFloor);
 
-    // if(success){
-    //   Serial.print(Robot::onFloor);
-    //   Serial.print("\t");
-    //   Serial.print(Robot::inclinated);
-    //   Serial.print("\t");
-    //   Serial.print(Robot::dx);
-    //   Serial.print("\t");
-    //   Serial.print(Robot::dy);
-    //   Serial.print("\t");
-    //   Serial.print(Robot::dt);
-    //   Serial.println();
-    // }
+    unsigned long end = micros();
+
+    // Serial.println(buffer[0], BIN);
+    if(success){
+      Attitude::newData = true;
+      // Serial.print(Robot::onFloor);
+      // Serial.print("\t");
+      // Serial.print(Robot::inclinated);
+      // Serial.print("\t");
+      // Serial.print(Robot::dx);
+      // Serial.print("\t");
+      // Serial.print(Robot::dy);
+      // Serial.print("\t");
+      // Serial.print(Robot::theta);
+      // Serial.println();
+    }
   }
 }
