@@ -11,7 +11,7 @@ Quaternion q;
 VectorFloat gravity;
 
 float getYPR(int n){
-  return ypr[n];
+  return ypr[n] * (180.0 / M_PI);
 }
 
 // Global flag that must be set to `true` when interrupt occurs
