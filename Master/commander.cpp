@@ -15,13 +15,11 @@
 //
 // NRF24L01 Config
 //
-// RH_NRF24 *radio;//(PIN_RADIO_CE, PIN_RADIO_CSN);
-// RHReliableDatagram *radioManager;//(radio, 2);
+RF24 radio(PIN_RADIO2_CE, PIN_RADIO2_CSN);
 
-uint8_t radioData[] = "Hi!";
-
-uint8_t radioBuffer[64];
-uint8_t radioBufferOut[64];
+void configNRF();
+uint8_t radioBufferIn[RADIO_PACKET_SIZE];
+uint8_t radioBufferOut[RADIO_PACKET_SIZE];
 
 // Checks for communication and sets robot's state to IDDLE/ACTIVE
 void threadIddleDetection_run();
@@ -33,8 +31,12 @@ Thread threadSerial(threadSerial_run, 50);
 
 // NRF Communication
 void threadNRF_run();
-Thread threadNRF(threadNRF_run, 1000); // Starts listening after 1sec, then set itself to 5ms
+Thread threadNRF(threadNRF_run, 1000); // Starts listening after 1sec, then set itself to 0ms
 
+
+// This robot Address
+byte ADDRESS_ROBOT[6]            = "robt?";
+byte ADDRESS_STATION[6]          = "stat?";
 
 // ====================================
 //           INITIALIZATION
@@ -42,149 +44,119 @@ Thread threadNRF(threadNRF_run, 1000); // Starts listening after 1sec, then set 
 
 void Commander::init(){
 
-  LOG("Commander::init\n");
+  LOG("Commander::init"); ENDL;
+  delay(10);
 
   // Initialize Radio
-  LOG("Radio::init\n");
-  // radio = new RH_NRF24(PIN_RADIO1_CE, PIN_RADIO1_CSN);
+  LOG("Radio::init"); ENDL;
+  delay(10);
+  radio.begin();
+  LOG("Radio::init OK"); ENDL;
+  delay(10);
 
-  // radioManager = new RHReliableDatagram(*radio, 2);
-  // radioManager->setRetries(1);
-  // radioManager->setTimeout(3);
-  // radioManager->setThisAddress(Robot::getRobotID());
+  // Change ADDRESS_ROBOT to match with Robot's id (from eeprom)
+  ADDRESS_ROBOT[4]   = Robot::getRobotID();
+  ADDRESS_STATION[4] = Robot::getRobotID();
 
-  // if(!radio->init()){
-  //   Robot::alarm = ALARM_INIT;
-  //   LOG(" ! Radio failed to init\n");
-  // }
+  // Configure Radio
+  configNRF();
 
-  // if (!radio->setChannel(Robot::getRobotID()))
-    // LOG(" ! setChannel failed\n");
+  // Listen to it's own ID
+  radio.openReadingPipe(1, ADDRESS_ROBOT);
+  radio.openWritingPipe(ADDRESS_STATION);
 
-  // if (!radio->setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm))
-    // LOG(" ! setRF failed\n");
+  radio.startListening();
 
   system.add(&threadIddleDetection);
   system.add(&threadSerial);
   system.add(&threadNRF);
 }
 
-
+void configNRF(){
+  // Configure Radio
+  if(!radio.setDataRate(RF24_250KBPS)){
+    Robot::doBeep(10, 10);
+    LOG(" ! Failed to setup Radio"); ENDL;
+  }
+  radio.setPALevel(RF24_PA_MAX);
+  radio.setChannel(108);
+  radio.setPayloadSize(RADIO_PACKET_SIZE);
+  radio.setRetries(0, 0);
+  radio.setAutoAck(true);
+  radio.startListening();
+}
 
 // ====================================
-//           MESSAGE PARSING
+// Does a sweep scan on the radio Freq.
 // ====================================
 
-/*
-  Handles the Message from buffer, set's the output buffer,
-  and returns the length to send back.
-*/
-bool Commander::handleMessage(uint8_t message[], uint8_t len){
-  bool activate = false;
-  char cmd;
+const int num_reps = 100;
+const uint8_t num_channels = 126;
+uint8_t values[num_channels];
+void Commander::scanRadio(){
+  radio.setAutoAck(false);
 
-  // LOG("Got [");LOG(len);LOG("]: ");
-  // for(int i = 0; i < len; i++){
-  //   Serial.print((int)message[i]);
-  //   Serial.print(" ");
-  // }
+  // Get into standby mode
+  radio.startListening();
+  radio.stopListening();
 
-  if(len <= 0)
-    return 0;
+  // Print out header, high then low digit
+  int i = 0;
+  while ( i < num_channels ){
+    Serial.print(i>>4, HEX);
+    ++i;
+  }
+  Serial.println();
+  i = 0;
+  while ( i < num_channels ){
+    Serial.print(i&0xf, HEX);
+    ++i;
+  }
+  Serial.println();
 
-  // Get first byte (as the command)
-  cmd = message[0];
+  // Do Scan sweep
+  // Clear measurement values
+  memset(values, 0, sizeof(values));
 
-  if(cmd == 'g'){
-    // Get Robot Status Packet:
-    //  [0] = STATE (IDDLE/ACTIVE)
-    //  [1] = ALARM
-    //  [2] = Battery voltage (x10)
+  // Scan all channels num_reps times
+  int rep_counter = num_reps;
+  while (rep_counter--) {
+    int i = num_channels;
+    digitalWrite(PIN_LED1, !digitalRead(PIN_LED1));
+    while (i--) {
+      // Select this channel
+      radio.setChannel(i);
 
-    activate = false;
+      // Listen for a little
+      radio.startListening();
+      delayMicroseconds(225);
+
+      // Did we get a carrier?
+      if ( radio.testCarrier() ){
+        ++values[i];
+        digitalWrite(PIN_LED2, true);
+      }else{
+        digitalWrite(PIN_LED2, false);
+      }
+      radio.stopListening();
+    }
   }
 
-  if(cmd == 's'){
-    // Stops the robot
-    Robot::setState(IDDLE);
-
-    activate = false;
+  // Print out channel measurements, clamped to a single hex digit
+  i = 0;
+  while ( i < num_channels ) {
+    Serial.print(min(0xf,values[i]&0xf), HEX);
+    ++i;
   }
+  Serial.println();
 
-  if(cmd == 'a'){
-    // if(len != 7){
-      // LOG("Invalid command with pattern.");
-      // return 0;
-    // }
-
-    // Set Robot target Theta/Position
-    /*
-      Incoming Pattern:
-        [0] = 'a'
-
-        [1] = thetaValL
-        [2] = thetaValH
-
-        [3] = yValL
-        [4] = yValH
-
-      Out Pattern:
-        [0] = AA;
-    */
-    uint16_t rawTheta = message[1] | (message[2] << 8);
-    float Theta = ((float)rawTheta - 3600) / 10.0;
-
-    uint16_t rawY = message[3] | (message[4] << 8);
-    float Y = ((float)rawY - 1000) / 10.0;
-
-    // Update actual target
-    Controller::setTarget(0, Y, Theta);
-
-    // Raise flag to activate robot (Go out of IDDLE)
-    activate = true;
-
-    // LOG("SET TARGET STATE: \n");
-    // LOG("y: "); LOG(Controller::targetY); LOG(" ["); LOG(Controller::targetYType); LOG("]\n");
-    // LOG("d: "); LOG(Controller::targetTheta); LOG(" ["); LOG(Controller::targetThetaType); LOG("]\n");
-
-  }
-
-  if(cmd == 'p'){
-    // Set Robot PID
-    /*
-      Incoming Pattern:
-        [0] = 'p'
-
-        [1] = kp * 10
-        [2] = ki * 10
-        [3] = kd * 10
-        [3] = kiLimit * 10
-
-      Out Pattern:
-        [0] = AA;
-    */
-
-    int yType = message[4];
-    Controller::setPIDConstants(
-      message[1] / 10.0,
-      message[2] / 10.0,
-      message[3] / 10.0,
-      message[4]
-    );
-
-    // LOG("SET TARGET STATE: \n");
-    // LOG("y: "); LOG(Controller::targetY); LOG(" ["); LOG(Controller::targetYType); LOG("]\n");
-    // LOG("d: "); LOG(Controller::targetTheta); LOG(" ["); LOG(Controller::targetThetaType); LOG("]\n");
-
-    activate = false;
-  }
-
-  return activate;
+  // Roll back modifications
+  configNRF();
 }
 
 
 // ====================================
-//          THREAD CALLBACKS
+//   Detects Iddle activity on Radio
 // ====================================
 
 void threadIddleDetection_run(){
@@ -194,9 +166,14 @@ void threadIddleDetection_run(){
 
   if(millis() - Robot::lastTimeActive > RADIO_TIMEOUT_TO_IDDLE){
     Robot::setState(IDDLE);
-    Robot::doBeep(Robot::getRobotID(), 50);
+    Robot::doBeep(2, 50);
   }
 }
+
+
+// ====================================
+//   Parses Serial commands from USB
+// ====================================
 
 void threadSerial_run(){
   if(!Serial.available())
@@ -204,7 +181,8 @@ void threadSerial_run(){
 
   char got = Serial.read();
 
-  LOG("got:"); LOG(got); LOG("\n");
+  ENDL;
+  LOG("Cmd:"); LOG(got); ENDL;
 
   if(got == '1')
     Motors::setPower(100, 0);
@@ -219,21 +197,31 @@ void threadSerial_run(){
     Motors::setPower(0, -100);
 
   else if(got == '8'){
-    Controller::setTarget(0, 0, -90);
+    Controller::setTarget(0, 50, 90);
   }else if(got == '0'){
     Controller::setTarget(0, 0, 0);
     Motors::stop();
   }else if(got == 'b'){
-    LOG("bat: "); LOG(Robot::vbat); LOG("v\n");
+    LOG("Battery: "); LOG(Robot::vbat); ENDL;
 
   }else if(got == 'i'){
-    LOG("ID: "); LOG(Robot::getRobotID()); LOG("\n");
+    delay(1);
+    if(Serial.available()){
+      char newId = Serial.read();
+      if(newId != '\r' && newId != '\n'){
+        LOG("Id set! RESTART to change Radio"); ENDL;
+        Robot::setRobotID(newId);
+      }
+    }
 
+    LOG("ID: "); LOG(Robot::getRobotID()); ENDL;
+    LOG("[Send i<char> to set robot's id]");
   }else if(got == '@'){
-    LOG(F("===========================\n"));
-    LOG(F("= Serial Interactive Mode =\n"));
-    LOG(F("= Send  ':q'  to exit     =\n"));
-    LOG(F("===========================\n"));
+    Motors::stop();
+    LOG(F("===========================")); ENDL;
+    LOG(F("= Serial Interactive Mode =")); ENDL;
+    LOG(F("= Send  ':q'  to exit     =")); ENDL;
+    LOG(F("===========================")); ENDL;
 
     bool notExited = true;
     char lastChr = ' ';
@@ -252,51 +240,84 @@ void threadSerial_run(){
       while(Serial1.available())
         Serial.write(Serial1.read());
     }
+  }else if(got == 'd'){
+    Robot::debug = !Robot::debug;
+    LOG("Debug mode is "); LOG(Robot::debug ? "ON" : "OFF"); ENDL;
+  }else if(got == 's'){
+    Motors::stop();
+    Commander::scanRadio();
   }else if(got == 'h'){
-    // LOG("\n---- help ----\n");
-    // LOG("0: Stop motors\n");
-    // LOG("b: Get bat. voltage\n");
-    // LOG("i: robot ID\n");
+    ENDL;
+    LOG("---- help ----");
+    ENDL;
+    LOG("0: Stop motors"); ENDL;
+    LOG("d: Enable debug flag"); ENDL;
+    LOG("b: Get bat. voltage"); ENDL;
+    LOG("i: View robot ID"); ENDL;
+    LOG("s: Scan NRF"); ENDL;
+    LOG("i<char>: Set robot id"); ENDL;
+    LOG("@: Replicate odometry Serial"); ENDL;
   }
 }
 
+
+// ====================================
+// Parses Incoming Messages from Radio
+// ====================================
+
 void threadNRF_run(){
+  static bool available;
+  static bool activate;
   long start = millis();
 
-  // Set interval to 5ms
+  // Set interval to 0ms
   threadNRF.setInterval(0);
 
-  // if(!radio->available())
-  //   return;
+  available = false;
+  while (radio.available()) {
+    available = true;
+    radio.read( &radioBufferIn, RADIO_PACKET_SIZE);
+    LOG("Rec packet: "); LOG((char*) radioBufferIn); ENDL;
+  }
 
-  uint8_t len = sizeof(radioBuffer);
+  // Skip if no data received
+  if(!available)
+    return;
 
-  // if (!radio->recv(radioBuffer, &len)){
-  //   LOG(" ! recv");
-  //   return;
-  // }
+  // Parse message
+  activate = radioBufferIn[1];
 
-  // LOG("Got msg! ");LOG(len);LOG("\n");
-  bool activate = Commander::handleMessage(radioBuffer, len);
+  int16_t _targetY     = radioBufferIn[2] | (radioBufferIn[3] << 8);
+  int16_t _targetTheta = radioBufferIn[4] | (radioBufferIn[5] << 8);
 
-  radioBufferOut[0] = Robot::state;
-  radioBufferOut[1] = Robot::alarm;
-  radioBufferOut[2] = Robot::vbat*10;
+  float targetY     =     _targetY / FLOAT_MULTIPLIER;
+  float targetTheta = _targetTheta / FLOAT_MULTIPLIER;
 
-  // radio->send(radioBufferOut, 3);
-  // radio->waitPacketSent();
+  Controller::setTarget(0, targetY, targetTheta);
+
+  // Build callback message
+  radioBufferOut[0] = radioBufferIn[0];
+  radioBufferOut[1] = Robot::state;
+  radioBufferOut[2] = Robot::vbat * 10;
+
+  // Send message
+  radio.stopListening();
+  radio.write(&radioBufferOut, 8);
+  radio.startListening();
 
   // Got message. Robot is now Active if message was an action message
   if(Robot::alarm == NONE){
     if(Robot::state == IDDLE && activate){
       Robot::setState(ACTIVE);
       Robot::doBeep(1, 100);
-  }
+    }
 
     // Save timestamp of message
     Robot::lastTimeActive = millis();
-    // Serial.print(" ");
-    // Serial.print(lastMessageTimestamp - start);
-    // Serial.print(" ms\n");
+  }
+
+  // Force Disable robot if said
+  if(!activate){
+    Robot::setState(IDDLE);
   }
 }

@@ -43,6 +43,7 @@
 //
 #define SERIAL_SPEED           115200
 #define LOG                    Serial.print
+#define ENDL                   LOG(F("\r\n"))
 
 
 //
@@ -54,9 +55,9 @@
 //
 // VBat Reader
 //
-#define BAT_R1           22000
-#define BAT_R2           10000
-#define BAT_DROP         0.26
+#define BAT_R1                 22000
+#define BAT_R2                 10000
+#define BAT_DROP               0.26
 #define VBAT_VOLTAGE(adc)      (adc / (1023 / 5.0)) * (BAT_R1 + BAT_R2) * (1.0 / BAT_R2) + BAT_DROP
 
 #define VBAT_ALARMED           7.10
@@ -69,5 +70,12 @@
 //
 #define RADIO_MASTER_ADDRESS   1
 #define RADIO_TIMEOUT_TO_IDDLE 2000
+#define RADIO_PACKET_SIZE      8
+#define FLOAT_MULTIPLIER       10.0
+
+//
+// EEPROM Addresses
+//
+#define EEPROM_ROBOT_ID        0x10
 
 #endif

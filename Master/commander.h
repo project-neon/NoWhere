@@ -15,14 +15,8 @@ public:
 
   static void init();
 
+  static void scanRadio();
 
-  // ====================================
-  //           MESSAGE PARSING
-  // ====================================
-
-  static bool handleMessage(uint8_t message[], uint8_t len);
-
-  // static long lastPacketTimestamp;
 };
 
 
