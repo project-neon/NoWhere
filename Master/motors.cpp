@@ -32,8 +32,8 @@ void Motors::setPower(float m1, float m2){
   m2 = min(max(m2, -100), 100);
 
   // Map powers
-  int powerOutA = m1 * (MOTOR_ABS_MAX * (1/100.0));
-  int powerOutB = m2 * (MOTOR_ABS_MAX * (1/100.0));
+  int powerOutA = m1 * (MOTOR_ABS_MAX / 100.0);
+  int powerOutB = m2 * (MOTOR_ABS_MAX / 100.0);
 
   // Set power
   analogWrite(PIN_M1_EN, abs(powerOutA));
@@ -45,18 +45,17 @@ void Motors::setPower(float m1, float m2){
 
   digitalWrite(PIN_M2_IN1, powerOutB > 0 ? HIGH : LOW);
   digitalWrite(PIN_M2_IN2, powerOutB > 0 ? LOW : HIGH);
-
 }
 
 void Motors::stop(){
   // Set power (0)
-  digitalWrite(PIN_M1_EN, LOW);
-  digitalWrite(PIN_M2_EN, LOW);
+  digitalWrite(PIN_M1_EN, HIGH);
+  digitalWrite(PIN_M2_EN, HIGH);
 
   // Set both DIRS to 0
-  digitalWrite(PIN_M1_IN1, LOW);
-  digitalWrite(PIN_M1_IN2, LOW);
+  digitalWrite(PIN_M1_IN1, HIGH);
+  digitalWrite(PIN_M1_IN2, HIGH);
 
-  digitalWrite(PIN_M2_IN1, LOW);
-  digitalWrite(PIN_M2_IN2, LOW);
+  digitalWrite(PIN_M2_IN1, HIGH);
+  digitalWrite(PIN_M2_IN2, HIGH);
 }

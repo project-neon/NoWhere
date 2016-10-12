@@ -20,13 +20,15 @@ public:
   //   SPECIFIC CONFIGURATIONS (EEPROM)
   // ====================================
 
-  static int getRobotID();
+  static char getRobotID();
+  static void setRobotID(char id);
 
 
   // ====================================
   //         PRIMITIVE STATES
   // ====================================
 
+  static bool debug;
   /*
     Boolean flag indicating Active stabilizing/Power on motors
   */
@@ -77,11 +79,11 @@ public:
   //         ATTITUDE/ORIENTATION
   // ====================================
 
-  static Quaternion q;
-
-  static VectorFloat gravity;
-
-  static float ypr[3];
+  static int16_t dx;
+  static int16_t dy;
+  static float theta;
+  static bool onFloor;
+  static bool inclinated;
 
 };
 

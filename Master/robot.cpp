@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <EEPROM.h>
 #include <Thread.h>
 
 #include "_config.h"
@@ -9,7 +10,6 @@
 #include "system.h"
 
 void threadBeeper_run();
-
 Thread threadBeeper(threadBeeper_run, 0);
 
 
@@ -44,18 +44,29 @@ void Robot::init(){
 //   SPECIFIC CONFIGURATIONS (EEPROM)
 // ====================================
 
-int Robot::getRobotID(){
-  return 2;
+char _id = 0x00;
+char Robot::getRobotID(){
+  if(_id == 0x00){
+    // Load from Eeprom if not loaded yet
+    _id = EEPROM.read(EEPROM_ROBOT_ID);
+  }
+  return _id;
+}
+
+void Robot::setRobotID(char id){
+  // Clear cache (Force re-reading)
+  _id = 0x00;
+  EEPROM.write(EEPROM_ROBOT_ID, id);
 }
 
 
 // ====================================
 //         PRIMITIVE STATES
 // ====================================
-
+bool Robot::debug = false;
 RobotState Robot::state = IDDLE;
 RobotAlarm Robot::alarm = NONE;
-Robot::lastTimeActive = 0;
+unsigned long Robot::lastTimeActive = 0;
 
 // Sets the robot's state
 void Robot::setState(RobotState _state){
@@ -154,7 +165,8 @@ void threadBeeper_run(){
 //         ATTITUDE/ORIENTATION
 // ====================================
 
-
-Quaternion Robot::q = Quaternion();
-VectorFloat Robot::gravity = VectorFloat();
-float Robot::ypr[3] = {0,0,0};
+int16_t Robot::dx = 0;
+int16_t Robot::dy = 0;
+float Robot::theta = 0;
+bool Robot::onFloor = false;
+bool Robot::inclinated = false;
