@@ -20,13 +20,15 @@ public:
   //   SPECIFIC CONFIGURATIONS (EEPROM)
   // ====================================
 
-  static int getRobotID();
+  static char getRobotID();
+  static void setRobotID(char id);
 
 
   // ====================================
   //         PRIMITIVE STATES
   // ====================================
 
+  static bool debug;
   /*
     Boolean flag indicating Active stabilizing/Power on motors
   */

@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <EEPROM.h>
 #include <Thread.h>
 
 #include "_config.h"
@@ -43,15 +44,26 @@ void Robot::init(){
 //   SPECIFIC CONFIGURATIONS (EEPROM)
 // ====================================
 
-int Robot::getRobotID(){
-  return 2;
+char _id = 0x00;
+char Robot::getRobotID(){
+  if(_id == 0x00){
+    // Load from Eeprom if not loaded yet
+    _id = EEPROM.read(EEPROM_ROBOT_ID);
+  }
+  return _id;
+}
+
+void Robot::setRobotID(char id){
+  // Clear cache (Force re-reading)
+  _id = 0x00;
+  EEPROM.write(EEPROM_ROBOT_ID, id);
 }
 
 
 // ====================================
 //         PRIMITIVE STATES
 // ====================================
-
+bool Robot::debug = false;
 RobotState Robot::state = IDDLE;
 RobotAlarm Robot::alarm = NONE;
 unsigned long Robot::lastTimeActive = 0;
