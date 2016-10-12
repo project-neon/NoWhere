@@ -23,8 +23,10 @@ Thread threadCheckInclinationAlarm(threadCheckInclinationAlarm_run, 500);
 // PID's
 //
 PID pidX(0.2f, 2.5f, 0.0f, 100);
-PID pidY(3.0f, 0.0f, 0.0f, 0);
-PID pidTheta(1.0f, 0.0f, 0.0f, 0);
+PID pidY(7.0f, 0.0f, 0.0f, 0);
+PID pidTheta(1.0f, 0.0f, 0.02f, 0);
+
+void resetControl();
 
 
 // ====================================
@@ -84,6 +86,8 @@ void threadCheckInclinationAlarm_run(){
 }
 
 int logs = 0;
+float pwrLeft;
+float pwrRight;
 void threadController_run(){
   static unsigned long lastNow;
   static unsigned long now;
@@ -92,8 +96,6 @@ void threadController_run(){
   static float rateThetha;
   static float rateSpeed;
   static float dt;
-  static float pwrLeft;
-  static float pwrRight;
   static bool wasOnFloor = true;
 
   // Checks if new data is available for processing
@@ -127,7 +129,7 @@ void threadController_run(){
 
   // Rate is absurd? Skip this controll.
   if(rateThetha < -1000 || rateThetha > 1000){
-    LOG(" ! Absurd rateThetha "); LOG(rateThetha); LOG("\n");
+    LOG(" ! theta "); LOG(rateThetha); ENDL;
     return;
   }
 
@@ -138,12 +140,7 @@ void threadController_run(){
 
   // Check if robot is not touching ground
   if(!Robot::onFloor){
-    Motors::stop();
-    pidY.reset();
-    pidX.reset();
-    pidTheta.reset();
-    pwrLeft = 0;
-    pwrRight = 0;
+    resetControl();
     if(wasOnFloor)
       Robot::doBeep(1, 80);
 
@@ -157,8 +154,8 @@ void threadController_run(){
 
   // Checks if robot is in IDDLE state. Skip if so...
   if(Robot::state == IDDLE){
-    // Motors::stop();
-    // return;
+     resetControl();
+     return;
   }
 
   // Calculate
@@ -182,10 +179,11 @@ void threadController_run(){
 
   Motors::setPower(pwrLeft, pwrRight);
 
-  // Log once in a while
-  // if(logs++ % 50 == 0){
   float errY = pow(Controller::targetY - rateSpeed, 2);
   float errTheta = pow(Controller::targetTheta - rateThetha, 2);
+
+  // Log if debug is enabled
+  if(Robot::debug){
     LOG("\tdt: "); LOG(dt * 1000);
     LOG("\terrY: "); LOG(errY);
     LOG("\terrT: "); LOG(errTheta);
@@ -195,6 +193,16 @@ void threadController_run(){
     // LOG("\ty: "); LOG(Controller::targetY);
     // LOG("\tthet: "); LOG(Controller::targetTheta);
     LOG("\r\n");
-  // }
+  }
 
+}
+
+// Resets the PID and stop motors
+void resetControl(){
+  Motors::stop();
+  pidY.reset();
+  pidX.reset();
+  pidTheta.reset();
+  pwrLeft = 0;
+  pwrRight = 0;
 }
