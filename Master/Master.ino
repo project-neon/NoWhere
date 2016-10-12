@@ -46,13 +46,5 @@ void setup(){
 
 // long start, end;
 void loop(){
-  // static int foo;
-
-  // start = micros();
   system.run();
-  // end = micros();
-
-  // if((++foo) % 10000 == 0)
-    // LOG("loopt: "); LOG(end-start); LOG("\n");
-
 }
