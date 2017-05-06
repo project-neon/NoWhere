@@ -4,7 +4,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-extern ThreadController system;
+extern ThreadController controller;
 
 class System{
 public:

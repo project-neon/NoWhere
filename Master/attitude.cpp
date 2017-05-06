@@ -22,7 +22,7 @@ void Attitude::init(){
 
   Serial1.begin(115200);
 
-  system.add(&threadOdometry);
+  controller.add(&threadOdometry);
 }
 
 bool Attitude::newData = false;

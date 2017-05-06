@@ -4,7 +4,7 @@
 #include "robot.h"
 #include "system.h"
 
-ThreadController system;
+ThreadController controller;
 
 //
 // Battery Check specific
@@ -32,8 +32,8 @@ void System::init(){
   LOG("System::init\n");
 
   // Add threads to system
-  system.add(&threadBatteryChecker);
-  system.add(&threadWatchdog);
+  controller.add(&threadBatteryChecker);
+  controller.add(&threadWatchdog);
 }
 
 /*

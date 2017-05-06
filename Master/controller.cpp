@@ -36,8 +36,8 @@ void resetControl();
 void Controller::init(){
   LOG("Controller::init\n");
 
-  system.add(&threadCheckInclinationAlarm);
-  system.add(&threadController);
+  controller.add(&threadCheckInclinationAlarm);
+  controller.add(&threadController);
 }
 
 

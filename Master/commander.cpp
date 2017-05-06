@@ -67,9 +67,9 @@ void Commander::init(){
 
   radio.startListening();
 
-  system.add(&threadIddleDetection);
-  system.add(&threadSerial);
-  system.add(&threadNRF);
+  controller.add(&threadIddleDetection);
+  controller.add(&threadSerial);
+  controller.add(&threadNRF);
 }
 
 void configNRF(){

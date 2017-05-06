@@ -35,7 +35,7 @@ void Robot::init(){
   Robot::setAlarm(NONE);
 
   // Setup Beeper Thread
-  system.add(&threadBeeper);
+  controller.add(&threadBeeper);
   Robot::setBeep(BEEP_NONE);
 };
 
