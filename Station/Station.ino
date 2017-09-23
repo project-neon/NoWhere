@@ -1,4 +1,4 @@
-// System Includes
+ // System Includes
 
 // External Libraries
 #include <SPI.h>
@@ -25,7 +25,7 @@
 	 - Commands are delimited by '\n'
 	 - The first character determines the type of action:
 	 	 ':' Sends a command to a robot
-	 	 	Usage: ':[MSG_ID];[TARGET_ID];[Cmd];[thetaType];[thetaSpeed];[yType];[ySpeed]'
+	 	 	Usage: ':[TARGET_ID];[Cmd];[thetaType];[thetaSpeed];[yType];[ySpeed]'
 	 	 	Where TARGET_ID is an Integer, And all other are float params;
 
 	 	 	When Message is resolved, it will return:
@@ -42,7 +42,7 @@
 #define PIN_RADIO2_CE		    6
 #define PIN_RADIO2_CSN      7
 
-#define RADIO_PACKET_SIZE   8
+#define RADIO_PACKET_SIZE   7
 
 #define FLOAT_MULTIPLIER    10.0
 
@@ -78,7 +78,12 @@ byte addressesIn[][6] = {
 void configNRF(RF24 &radio){
   // Configure Radio
   if(!radio.setDataRate(RF24_250KBPS)){
-    LOG("! Failed to setup Radio"); ENDL;
+    LOG("nok init"); 
+    ENDL;
+    while(1){
+      digitalWrite(13, !digitalRead(13));
+      delay(100);
+    }
   }
   radio.setPALevel(RF24_PA_MAX);
   radio.setChannel(108);
@@ -100,13 +105,13 @@ void setup(){
   Serial.setTimeout(5);
 
   // Debug
-	Serial.print("~ ----- MasterFirmware -----\n");
+	Serial.print("start\n");
 
 	radioIn.begin();
   configNRF(radioIn);
 	radioOut.begin();
   configNRF(radioOut);
-  Serial.print("~ Radio ok\n");
+  Serial.print("\n");
 
   // Configure Receiving pipes
   radioIn.stopListening();
@@ -202,8 +207,8 @@ void loop(){
   while(radioIn.available()){
     char buf[8];
     radioIn.read(&buf, 8);
-    Serial.print("~Received: ");
-    Serial.println(buf);
+    //Serial.print("ok ");
+    LOG(buf);ENDL;
   }
 }
 
@@ -217,26 +222,14 @@ void handleMessage(){
 
   // Check start token
   if(serialDataIn[0] != ':'){
-    LOG("!Invalid start token: "); LOG(serialDataIn[0], HEX); ENDL;
+    LOG("nok "); LOG(serialDataIn[0], HEX); ENDL;
     return;
   }
-
-  // Parse Message ID
-	startIndex = endIndex + 1;
-	endIndex = message.indexOf(';', startIndex);
-	if(endIndex < 0){
-		LOG("! Missing Message ID\n");
-		return;
-	}
-	tmp = message.substring(startIndex, endIndex);
-	int msgId = tmp.toInt();
-  // LOG("~msgId: "); LOG(msgId); ENDL;
-
   // Parse Robot ID
   startIndex = endIndex + 1;
 	endIndex = message.indexOf(';', startIndex);
 	if(endIndex < 0){
-		LOG("! Missing Robot ID\n");
+		LOG("nok\n");
 		return;
 	}
 	tmp = message.substring(startIndex, endIndex);
@@ -247,7 +240,7 @@ void handleMessage(){
   startIndex = endIndex + 1;
 	endIndex = message.indexOf(';', startIndex);
 	if(endIndex < 0){
-		LOG("! Missing Target State (IDDLE/ACTIVE)\n");
+		LOG("nok\n");
 		return;
 	}
 	tmp = message.substring(startIndex, endIndex);
@@ -258,7 +251,7 @@ void handleMessage(){
   startIndex = endIndex + 1;
 	endIndex = message.indexOf(';', startIndex);
 	if(endIndex < 0){
-		LOG("! Missing Target Y\n");
+		LOG("nok\n");
 		return;
 	}
 	tmp = message.substring(startIndex, endIndex);
@@ -270,7 +263,7 @@ void handleMessage(){
   startIndex = endIndex + 1;
 	endIndex = message.indexOf(';', startIndex);
 	if(endIndex < 0){
-		LOG("! Missing Target theta\n");
+		LOG("nok\n");
 		return;
 	}
 	tmp = message.substring(startIndex, endIndex);
@@ -286,19 +279,16 @@ void handleMessage(){
   // Clear buffer
   memset(radioDataOut, 0, sizeof(radioDataOut));
 
-  // Make data
-  radioDataOut[0] = uint8_t(msgId);
-
   // IDDLE/ACTIVE
-  radioDataOut[1] = robotState;
+  radioDataOut[0] = robotState;
 
   // Y Speed
-  radioDataOut[2] = robotTargetY;
-  radioDataOut[3] = robotTargetY >> 8;
+  radioDataOut[1] = robotTargetY;
+  radioDataOut[2] = robotTargetY >> 8;
 
   // Theta Speed
-  radioDataOut[4] = robotTargetT;
-  radioDataOut[5] = robotTargetT >> 8;
+  radioDataOut[3] = robotTargetT;
+  radioDataOut[4] = robotTargetT >> 8;
 
 
   //
@@ -306,17 +296,17 @@ void handleMessage(){
   //
 
   // Validate robotId
-  if(robotId < 1 || robotId > 3){
-    LOG("! Invalid robot ID\n");
+  if(robotId < 1 || robotId > 6){
+    LOG("nok\n");
 		return;
   }
 
   // Select destination
   radioOut.openWritingPipe(addressesOut[robotId]);
-  if(radioOut.write(radioDataOut, 8)){
-    LOG("="); LOG(msgId); LOG(";"); LOG("ok"); ENDL;
+  if(radioOut.write(radioDataOut, 7)){
+    LOG("ok"); ENDL;
   }else{
-    LOG("="); LOG(msgId); LOG(";"); LOG("err"); ENDL;
+    LOG("nok"); ENDL;
   }
 
 
