@@ -1,53 +1,58 @@
- // System Includes
-
 // External Libraries
 #include <SPI.h>
 #include <RF24.h>
 
-// Custom Util
-
-// Modules
-
 /*
-	Master module that communicates with robots through Radio.
+
+  Project Neon 2017
+  Created by: Ivan Seidel
+  Modified by: João Pedro Vilas, and...
+
+	Station that communicates with robots through Radio,
+  by parsing and retransmitting the messages sent over serial.
 
 	This program serves as a Slave for the PC, and as Master
 	for the robots.
 
-	The API sent from this Master to Serial port is explained above:
-	 - Commands are delimited by '\n'
-	 - The first character determines the type of the message:
-	 	 '~' Is used for DEBUG purposes.
-		 '=' Is used to return values
-		 '!' Is used to send Error messages (Important)
+  The API to send commands to Robots is described below:
+    - Start always with the token ":", and send as this:
+    
+      :[TARGET_ID];[STATE];[linearSpeed];[thetaSpeed]
+      
+      TARGET_ID -> INTEGER of the robots ID, can be found 
+      by connecting the robot through it's micro USB, and 
+      sending i over it's Serial connection.
+      
+      STATE -> BOOLEAN of the Robot's STATE, either ACTIVE{1} 
+      or IDLE{0}. If the robot is active it will move as the 
+      command sent.
 
-	The API used when receiving data from Serial is:
-	 - Commands are delimited by '\n'
-	 - The first character determines the type of action:
-	 	 ':' Sends a command to a robot
-	 	 	Usage: ':[TARGET_ID];[Cmd];[thetaType];[thetaSpeed];[yType];[ySpeed]'
-	 	 	Where TARGET_ID is an Integer, And all other are float params;
+      LinearSpeed -> FLOAT, robot's linear speed in cm/s
 
-	 	 	When Message is resolved, it will return:
-	 	 		'=[MSG_ID];[RAW_RESPONSE_DATA]\n'
-
-
+      thetaSpeed -> FLOAT, robot's angular speed in degrees/s
+	 
+    - Commands are delimited by '\n'
+      
 */
 
+
+// Make logging Easier
 #define LOG                 Serial.print
 #define ENDL                LOG("\n")
 
+// Radio Harware Pins
 #define PIN_RADIO1_CE		    9
 #define PIN_RADIO1_CSN      10
 #define PIN_RADIO2_CE		    6
 #define PIN_RADIO2_CSN      7
 
-#define RADIO_PACKET_SIZE   7
-
-#define FLOAT_MULTIPLIER    10.0
-
+// Transmission Stuff
+#define RADIO_PACKET_SIZE   8
 #define MASTER_ADDRESS	 	  1
 #define ROBOT_ADDRESS		    2
+
+// Use the same value at the robot to decode the float values.
+#define FLOAT_MULTIPLIER    10.0
 
 void handleMessage();
 
@@ -55,6 +60,7 @@ void handleMessage();
 RF24 radioIn(PIN_RADIO1_CE, PIN_RADIO1_CSN);
 RF24 radioOut(PIN_RADIO2_CE, PIN_RADIO2_CSN);
 
+//Data Holders
 uint8_t radioDataIn[RADIO_PACKET_SIZE];
 uint8_t radioDataOut[RADIO_PACKET_SIZE];
 char serialDataIn[64];
@@ -77,16 +83,17 @@ byte addressesIn[][6] = {
 // Configures Speed/Channel/... in Radio
 void configNRF(RF24 &radio){
   // Configure Radio
-  if(!radio.setDataRate(RF24_250KBPS)){
+  if(!radio.setDataRate(RF24_1MBPS)){
     LOG("nok init"); 
     ENDL;
     while(1){
       digitalWrite(13, !digitalRead(13));
-      delay(100);
+      delay(200);
     }
   }
   radio.setPALevel(RF24_PA_MAX);
   radio.setChannel(108);
+  radio.setCRCLength(RF24_CRC_8);
   radio.setPayloadSize(RADIO_PACKET_SIZE);
   radio.setRetries(1, 1);
   radio.setAutoAck(true);
@@ -97,22 +104,19 @@ bool sendSpeed(int Channel, int thetaType, float thetaVal, int yType, float yVal
 
 void setup(){
   // Setup LED
-	pinMode(13, OUTPUT);
+  pinMode(13, OUTPUT);
 
-	// Initialize Serial
-	Serial.begin(115200);
-	while(!Serial);
+  // Initialize Serial
+  Serial.begin(500000);
+  while(!Serial);
   Serial.setTimeout(5);
 
-  // Debug
-	Serial.print("start\n");
 
-	radioIn.begin();
+  radioIn.begin();
   configNRF(radioIn);
-	radioOut.begin();
+  radioOut.begin();
   configNRF(radioOut);
-  Serial.print("\n");
-
+  Serial.print("start\n");
   // Configure Receiving pipes
   radioIn.stopListening();
   radioIn.openReadingPipe(1, addressesIn[1]); // Robot 1
@@ -130,45 +134,36 @@ void setup(){
 // Get's a Delimited Token in the message
 //
 int getToken(int start, String &in, String &out){
-	int endIndex = in.indexOf(';', start);
-	if(endIndex < 0){
-		return endIndex;
-	}
-	out = in.substring(start, endIndex);
-	return endIndex;
+  int endIndex = in.indexOf(';', start);
+  if(endIndex < 0){
+    return endIndex;
+  }
+  out = in.substring(start, endIndex);
+  return endIndex;
 }
 
 String message, tmp;
 int serialDataPos = 0;
-bool debugSend = false;
-void loop(){
-  static unsigned long lastDebugSend = 0;
 
-  //
-  // Step 0: Send Debug message every X ms
-  //
-  if(debugSend && millis() - lastDebugSend >= 20){
-    lastDebugSend = millis();
-    char buf[] = "hello!?";
-    radioOut.openWritingPipe(addressesOut[1]);
-    if(radioOut.write(buf, 8)){
-      Serial.println("Sent!");
-    }else{
-      // Serial.println("Failed!");
-    }
-  }
+void loop(){
 
   //
   // Step 1: Check incoming data from Serial
   //
   char in;
+  
   bool newPacket = false;
+
   while(Serial.available()){
+    
     in = Serial.read();
     // Do not append if packet size is greater than 64
     if(serialDataPos < 64)
       serialDataIn[serialDataPos] = in;
-
+    else{
+      LOG("nok buf_full");ENDL;
+      break;
+    }
     // Increment size
     serialDataPos++;
 
@@ -178,23 +173,15 @@ void loop(){
       if(serialDataPos < 63){
         newPacket = true;
         serialDataIn[serialDataPos + 1] = '\0';
+        serialDataPos = 0;
+        break;
       }
 
-      serialDataPos = 0;
     }
   }
 
   //
-  // Parse station commands (do not start with ':')
-  //
-  if(newPacket && serialDataIn[0] == 'd'){
-    newPacket = false;
-    debugSend = !debugSend;
-    LOG(debugSend ? "~Start Transmiting..." : "Stop Transmiting."); ENDL;
-  }
-
-  //
-  // Step 3: If new packet available, parse and send it
+  // Step 2: If new packet available, parse and send it
   //
   if(newPacket){
     handleMessage();
@@ -202,17 +189,17 @@ void loop(){
 
 
   //
-  // Step 2: Check incoming data in Receiving NRF
+  // Step 3: Check incoming data in Receiving NRF
   //
-  while(radioIn.available()){
-    char buf[8];
-    radioIn.read(&buf, 8);
-    //Serial.print("ok ");
-    LOG(buf);ENDL;
-  }
+  // while(radioIn.available()){
+  //   char buf[8];
+  //   radioIn.read(&buf, 8);
+  //   //Serial.print("ok ");
+  //   //LOG(buf);ENDL;
+  // }
 }
 
-void handleMessage(){
+void handleMessage(){ 
   float tmpFloat;
   int endIndex = 0;
   int startIndex = 0;
@@ -222,14 +209,14 @@ void handleMessage(){
 
   // Check start token
   if(serialDataIn[0] != ':'){
-    LOG("nok "); LOG(serialDataIn[0], HEX); ENDL;
+    LOG("nok token not found"); LOG(serialDataIn[0], HEX); ENDL;
     return;
   }
   // Parse Robot ID
   startIndex = endIndex + 1;
 	endIndex = message.indexOf(';', startIndex);
 	if(endIndex < 0){
-		LOG("nok\n");
+		LOG("nok id not found\n");
 		return;
 	}
 	tmp = message.substring(startIndex, endIndex);
@@ -240,7 +227,7 @@ void handleMessage(){
   startIndex = endIndex + 1;
 	endIndex = message.indexOf(';', startIndex);
 	if(endIndex < 0){
-		LOG("nok\n");
+		LOG("nok state not found\n");
 		return;
 	}
 	tmp = message.substring(startIndex, endIndex);
@@ -251,7 +238,7 @@ void handleMessage(){
   startIndex = endIndex + 1;
 	endIndex = message.indexOf(';', startIndex);
 	if(endIndex < 0){
-		LOG("nok\n");
+		LOG("nok ySpeed \n");
 		return;
 	}
 	tmp = message.substring(startIndex, endIndex);
@@ -261,15 +248,15 @@ void handleMessage(){
 
   // Read target Y Speed
   startIndex = endIndex + 1;
-	endIndex = message.indexOf(';', startIndex);
-	if(endIndex < 0){
-		LOG("nok\n");
-		return;
-	}
+	endIndex = startIndex + 2;
+	// if(endIndex < 0){
+	// 	LOG("nok thetaSpeed\n");
+	// 	return;
+	// }
 	tmp = message.substring(startIndex, endIndex);
 	tmpFloat = tmp.toFloat();
+  //LOG("targetTheta: "); LOG(tmpFloat); ENDL;
   int16_t robotTargetT = tmpFloat * FLOAT_MULTIPLIER;
-  // LOG("~robotTargetT: "); LOG(robotTargetT); ENDL;
 
 
   //
@@ -297,17 +284,15 @@ void handleMessage(){
 
   // Validate robotId
   if(robotId < 1 || robotId > 6){
-    LOG("nok\n");
+    LOG("nok id\n");
 		return;
   }
 
   // Select destination
   radioOut.openWritingPipe(addressesOut[robotId]);
-  if(radioOut.write(radioDataOut, 7)){
+  if(radioOut.write(radioDataOut, 8)){
     LOG("ok"); ENDL;
   }else{
     LOG("nok"); ENDL;
   }
-
-
 }

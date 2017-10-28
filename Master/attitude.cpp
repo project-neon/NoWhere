@@ -54,18 +54,5 @@ void threadOdometry_run(){
     if(success){
       Attitude::newData = true;
     }
-
-    // if(success && Robot::debug){
-    //   Serial.print(Robot::onFloor);
-    //   Serial.print("\t");
-    //   Serial.print(Robot::inclinated);
-    //   Serial.print("\t");
-    //   Serial.print(Robot::dx);
-    //   Serial.print("\t");
-    //   Serial.print(Robot::dy);
-    //   Serial.print("\t");
-    //   Serial.print(Robot::theta);
-    //   Serial.println();
-    // }
   }
 }
