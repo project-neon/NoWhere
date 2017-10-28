@@ -9,7 +9,7 @@
 #define INTERRUPT_IMU       1
 
 #define LOOP_TIME           5
-#define SQUAL_THRESHOLD_UP  10
+#define SQUAL_THRESHOLD_UP  30
 #define SQUAL_FILTER_LIMIT  10
 
 // Mouse Flags
@@ -19,6 +19,7 @@ long y;
 // Debug purposes
 bool DEBUG = false;
 bool MEASURE = false;
+bool ONFLOOR = true;
 long measured = 0;
 
 // Forward declaration
@@ -80,6 +81,15 @@ void loop(){
         measured = 0;
       }
       MEASURE = !MEASURE;
+    }
+    else if(in == 'f'){
+        Serial.print("OnFloor: ");
+        bool onFloor = isOnFloor();
+        Serial.print(onFloor);
+        Serial.print("Squal: ");
+        int squals = Mouse_readSqual();
+        Serial.print(squals);
+
     }
   }
 

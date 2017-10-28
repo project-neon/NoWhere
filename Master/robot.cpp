@@ -31,7 +31,7 @@ void Robot::init(){
   pinMode(PIN_VBAT, INPUT);
 
   // Setup State/Alarms
-  Robot::setState(IDDLE);
+  Robot::setState(ACTIVE);
   Robot::setAlarm(NONE);
 
   // Setup Beeper Thread
