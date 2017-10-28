@@ -187,11 +187,6 @@ void threadController_run(){
     LOG("\tdt: "); LOG(dt * 1000);
     LOG("\terrY: "); LOG(errY);
     LOG("\terrT: "); LOG(errTheta);
-    // LOG("\tthet: "); LOG(rateThetha);
-    // LOG("\tthet: "); LOG(rateSpeed);
-    // LOG("\tx: "); LOG(Controller::targetX);
-    // LOG("\ty: "); LOG(Controller::targetY);
-    // LOG("\tthet: "); LOG(Controller::targetTheta);
     LOG("\r\n");
   }
 
