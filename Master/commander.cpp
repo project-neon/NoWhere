@@ -75,8 +75,10 @@ void Commander::init(){
 void configNRF(){
   // Configure Radio
   if(!radio.setDataRate(RF24_1MBPS)){
-    Robot::doBeep(10, 10);
     LOG(" ! Failed to setup Radio"); ENDL;
+    while(1){
+      Robot::doBeep(10, 10);
+    }
   }
   radio.setPALevel(RF24_PA_MAX);
   radio.setCRCLength(RF24_CRC_8);
@@ -165,10 +167,10 @@ void threadIddleDetection_run(){
   if(Robot::state != ACTIVE)
     return;
 
-  // if(millis() - Robot::lastTimeActive > RADIO_TIMEOUT_TO_IDDLE){
-  //   Robot::setState(IDDLE);
-  //   Robot::doBeep(2, 50);
-  // }
+  if(millis() - Robot::lastTimeActive > RADIO_TIMEOUT_TO_IDDLE){
+    Robot::setState(IDDLE);
+    Robot::doBeep(2, 50);
+  }
 }
 
 
@@ -284,7 +286,7 @@ void threadNRF_run(){
   // Skip if no data received
   if(!available)
     return;
-
+  
   // Parse message
   activate = radioBufferIn[0];
 
@@ -319,6 +321,6 @@ void threadNRF_run(){
 
   // Force Disable robot if said
   if(!activate){
-    Robot::setState(ACTIVE);
+    Robot::setState(IDDLE);
   }
 }

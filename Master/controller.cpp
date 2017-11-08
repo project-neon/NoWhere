@@ -24,7 +24,7 @@ Thread threadCheckInclinationAlarm(threadCheckInclinationAlarm_run, 500);
 //
 PID pidX(0.2f, 2.5f, 0.0f, 100);
 PID pidY(7.0f, 0.0f, 0.0f, 0);
-PID pidTheta(1.0f, 0.0f, 0.02f, 0);
+PID pidTheta(1.0f, 0.0f, 0.04f, 0);
 
 void resetControl();
 
@@ -148,7 +148,7 @@ void threadController_run(){
 
     return;
   }else if(!wasOnFloor){
-    Robot::doBeep(2, 80);
+    Robot::doBeep(int(Robot::getRobotID())-'0', 80);
     wasOnFloor = true;
   }
 

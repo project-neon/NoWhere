@@ -45,6 +45,7 @@
 #define PIN_RADIO1_CSN      10
 #define PIN_RADIO2_CE		    6
 #define PIN_RADIO2_CSN      7
+#define PIN_LED             5
 
 // Transmission Stuff
 #define RADIO_PACKET_SIZE   8
@@ -87,8 +88,9 @@ void configNRF(RF24 &radio){
     LOG("nok init"); 
     ENDL;
     while(1){
-      digitalWrite(13, !digitalRead(13));
-      delay(200);
+      LOG(".");
+      digitalWrite(PIN_LED, !digitalRead(PIN_LED));
+      delay(1000);
     }
   }
   radio.setPALevel(RF24_PA_MAX);
@@ -104,12 +106,12 @@ bool sendSpeed(int Channel, int thetaType, float thetaVal, int yType, float yVal
 
 void setup(){
   // Setup LED
-  pinMode(13, OUTPUT);
+  pinMode(PIN_LED, OUTPUT);
 
   // Initialize Serial
   Serial.begin(500000);
   while(!Serial);
-  Serial.setTimeout(5);
+  Serial.setTimeout(4);
 
 
   radioIn.begin();
@@ -221,7 +223,7 @@ void handleMessage(){
 	}
 	tmp = message.substring(startIndex, endIndex);
 	int robotId = tmp.toInt();
-  // LOG("~robotId: "); LOG(robotId); ENDL;
+  //LOG("~robotId: "); LOG(robotId); ENDL;
 
   // Read Target state
   startIndex = endIndex + 1;
@@ -238,7 +240,7 @@ void handleMessage(){
   startIndex = endIndex + 1;
 	endIndex = message.indexOf(';', startIndex);
 	if(endIndex < 0){
-		LOG("nok ySpeed \n");
+		LOG("nok ySpeed \n"); 
 		return;
 	}
 	tmp = message.substring(startIndex, endIndex);
@@ -248,7 +250,7 @@ void handleMessage(){
 
   // Read target Y Speed
   startIndex = endIndex + 1;
-	endIndex = startIndex + 2;
+	endIndex = startIndex + 4;
 	// if(endIndex < 0){
 	// 	LOG("nok thetaSpeed\n");
 	// 	return;
@@ -257,6 +259,7 @@ void handleMessage(){
 	tmpFloat = tmp.toFloat();
   //LOG("targetTheta: "); LOG(tmpFloat); ENDL;
   int16_t robotTargetT = tmpFloat * FLOAT_MULTIPLIER;
+  // LOG("targetTheta: "); LOG(robotTargetT); ENDL;
 
 
   //
@@ -292,7 +295,11 @@ void handleMessage(){
   radioOut.openWritingPipe(addressesOut[robotId]);
   if(radioOut.write(radioDataOut, 8)){
     LOG("ok"); ENDL;
+    digitalWrite(PIN_LED, HIGH);
   }else{
     LOG("nok"); ENDL;
+    if(digitalRead(PIN_LED)){
+      digitalWrite(PIN_LED, LOW);  
+    }
   }
 }
