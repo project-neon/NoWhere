@@ -15,7 +15,9 @@
 	for the robots.
 
   The API to send commands to Robots is described below:
-    - Start always with the token ":", and send as this:
+    - To Set Up the number of Robots you are trying to control type:
+      '::s?' ? being the number of robots you wish to comunicate
+    - Start and finish always with the token ":", and send as this:
     
       :[TARGET_ROBOT1_ID];[STATE];[linearSpeed];[thetaSpeed]:[TARGET_ROBOT2_ID];[STATE];[linearSpeed];[thetaSpeed]:[TARGET_ID];[STATE];[linearSpeed];[thetaSpeed];
       
@@ -34,7 +36,7 @@
       LinearSpeed -> FLOAT, robot's linear speed in cm/s
 
       thetaSpeed -> FLOAT, robot's angular speed in degrees/s
-   
+    
     - Commands are delimited by '\n'
       
 */
