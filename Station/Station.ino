@@ -44,7 +44,7 @@
 // Make logging Easier
 #define LOG                 Serial.print
 #define ENDL                LOG("\n")
-// #define DEBUG
+#define DEBUG
 
 // Radio Harware Pins
 #define PIN_RADIO1_CE       7
@@ -52,10 +52,14 @@
 #define PIN_LED             13
 
 // Transmission Stuff
-#define RADIO_PACKET_SIZE   6
+#define ROBOT_PACKET_SIZE   6
+
 #define SEARCH_OFFSET 6
+
 uint8_t sizeDataOut = 0;
-bool shouldTransmit=true;
+byte radioAck = 0;
+
+bool shouldTransmit = true;
 
 #define ROBOT_QUANTITY_ADDRESS 0
 
@@ -67,20 +71,19 @@ int robotQuantity = 0;
 void handleMessage();
 
 // Radio Objects
-RF24 radioOut(PIN_RADIO1_CE, PIN_RADIO1_CSN);
+RF24 radio(PIN_RADIO1_CE, PIN_RADIO1_CSN);
 
 //Data Holders
 char serialDataIn[64];
 
 // Robot Addresses
-byte addresses[][6] = {"outb1","inbo1"};
+byte addresses[][6] = {"1Node","2Node"};
 
 // Configures Speed/Channel/... in Radio
 void configNRF(RF24 &radio){
-  
   // Configure Radio
   radio.powerUp();
-  if(!radio.setDataRate(RF24_250KBPS)){
+  if(!radio.setDataRate(RF24_1MBPS)){
     LOG("nok init"); 
     ENDL;
     while(1){
@@ -91,8 +94,7 @@ void configNRF(RF24 &radio){
   }
   radio.setPALevel(RF24_PA_MAX);
   radio.setChannel(108);
-  radio.setRetries(0, 0);
-  radio.enableDynamicAck();
+  radio.setRetries(0, 1);
 
   #ifdef DEBUG
     LOG("Radio Configured with settings: "); ENDL;
@@ -118,19 +120,19 @@ void setup(){
   while(!Serial);
   Serial.setTimeout(4);
 
-  radioOut.begin();
-  configNRF(radioOut);
+  radio.begin();
+  configNRF(radio);
   LOG("start"); ENDL;
   LOG("number of robots:");
   robotQuantity = EEPROM.read(ROBOT_QUANTITY_ADDRESS); 
   LOG(robotQuantity); ENDL;
   
-  sizeDataOut = RADIO_PACKET_SIZE*robotQuantity;
+  sizeDataOut = (ROBOT_PACKET_SIZE*robotQuantity)+1;
 
   // Configure Output Pipe
-  radioOut.openWritingPipe(addresses[0]);
-  radioOut.openReadingPipe(1,addresses[1]);
-  radioOut.startListening();
+  radio.openWritingPipe(addresses[0]);
+  radio.openReadingPipe(1,addresses[1]);
+  radio.startListening();
 }
 
 
@@ -197,6 +199,17 @@ void loop(){
   if(newPacket){
     handleMessage();
   }
+
+  radio.startListening();
+  
+  while (radio.available()){    
+
+    radio.read(&radioAck, sizeof(byte));             // Get the payload
+  }
+
+  LOG("This is the response: ");
+  LOG(radioAck);ENDL;
+
 }
 
 void handleMessage(){ 
@@ -204,12 +217,12 @@ void handleMessage(){
   #ifdef DEBUG
     unsigned long took = millis();
   #endif
-
+  static bool ack;
   float tmpFloat;
   int endIndex = 0;
   int startIndex = 0;
 
-  int16_t radioDataOut[sizeDataOut];
+  uint8_t radioDataOut[sizeDataOut];
   memset(radioDataOut, 0, sizeof(radioDataOut));
 
   // Convert to String
@@ -250,7 +263,7 @@ void handleMessage(){
       return;
     }
     tmp = message.substring(_startIndex, _endIndex);
-    int robotId = tmp.toInt();
+    uint8_t robotId = tmp.toInt();
     #ifdef DEBUG
       LOG("~robotId: "); LOG(robotId); ENDL;
     #endif
@@ -264,7 +277,7 @@ void handleMessage(){
       return;
     }
     tmp = message.substring(_startIndex, _endIndex);
-    int robotState = tmp.toInt();
+    uint8_t robotState = tmp.toInt();
     #ifdef DEBUG
       LOG("~robotState: "); LOG(robotState); ENDL;
     #endif
@@ -294,27 +307,38 @@ void handleMessage(){
     tmpFloat = tmp.toFloat();
     int16_t robotTargetT = tmpFloat * FLOAT_MULTIPLIER;
     #ifdef DEBUG
-      LOG("targetTheta: "); LOG(robotTargetT); ENDL;
+      LOG("~targetTheta: "); LOG(robotTargetT); ENDL;
     #endif
 
+    // Number of Robots
+
+    radioDataOut[0] = robotQuantity;
+
     // ID
-    radioDataOut[0+(i*RADIO_PACKET_SIZE)] = robotId;
+    radioDataOut[1+(i*ROBOT_PACKET_SIZE)] = robotId;
 
     // IDDLE/ACTIVE
-    radioDataOut[1+(i*RADIO_PACKET_SIZE)] = robotState;
+    radioDataOut[2+(i*ROBOT_PACKET_SIZE)] = robotState;
     
     // Y Speed
-    radioDataOut[2+(i*RADIO_PACKET_SIZE)] = robotTargetY;
-    radioDataOut[3+(i*RADIO_PACKET_SIZE)] = robotTargetY >> 8;
+    radioDataOut[3+(i*ROBOT_PACKET_SIZE)] = robotTargetY & 0xff;
+    radioDataOut[4+(i*ROBOT_PACKET_SIZE)] = (robotTargetY >> 8) & 0xff;
 
     // Theta Speed
-    radioDataOut[4+(i*RADIO_PACKET_SIZE)] = robotTargetT;
-    radioDataOut[5+(i*RADIO_PACKET_SIZE)] = robotTargetT >> 8;
-    
+    radioDataOut[5+(i*ROBOT_PACKET_SIZE)] = robotTargetT & 0xff;
+    radioDataOut[6+(i*ROBOT_PACKET_SIZE)] = (robotTargetT >> 8) & 0xff;
+
     startIndex = endIndex; // Reset startIndex for next robot message
     
   }
-
+  #ifdef DEBUG
+    for(int i=0; i < sizeDataOut; i++){
+        LOG("Data ");
+        LOG(i);
+        LOG(" :");
+        LOG(radioDataOut[i]);ENDL;
+    }
+  #endif
   //
   // Send to NRF
   //
@@ -322,7 +346,7 @@ void handleMessage(){
   // Validate robotId
   for(int i=0; i < robotQuantity; i++){
     // robotId should be between 1 and 10
-    if(!(radioDataOut[0+(i*RADIO_PACKET_SIZE)] >= 1 && radioDataOut[0+(i*RADIO_PACKET_SIZE)] <= 10)){
+    if(!(radioDataOut[1+(i*ROBOT_PACKET_SIZE)] >= 1 && radioDataOut[1+(i*ROBOT_PACKET_SIZE)] <= 10)){
         LOG("Wrong radioId ");
         LOG("message: ");
         LOG(i+1); ENDL;
@@ -334,26 +358,18 @@ void handleMessage(){
   }
 
   // Select destination
-  radioOut.stopListening();
-  radioOut.openWritingPipe(addresses[0]);
+  radio.stopListening();
+  radio.openWritingPipe(addresses[0]);
   if(shouldTransmit){
-    if(!radioOut.write(radioDataOut, RADIO_PACKET_SIZE,1)){
-      LOG("nok");
-      if(digitalRead(PIN_LED)){
-        digitalWrite(PIN_LED, LOW);  
-      }
-      #ifndef DEBUG
-        ENDL;
-      #endif
+    if(!radio.write( &radioDataOut, sizeDataOut)){
+      LOG("nok"); ENDL;
     }else{
-      LOG("ok");
-      digitalWrite(PIN_LED, HIGH);
-      #ifndef DEBUG
-        ENDL;
-      #endif
+      LOG("ok"); ENDL;
     } 
   }
-  radioOut.startListening();
+  
+  radio.startListening();
+  
   #ifdef DEBUG
     LOG(" took ");
     LOG(millis() - took); ENDL;
