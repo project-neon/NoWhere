@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <math.h>
-#include <helper_3dmath.h>
+//#include <helper_3dmath.h>
 
 #ifndef TYPES_H
 #define TYPES_H

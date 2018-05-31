@@ -15,11 +15,10 @@
 //
 // NRF24L01 Config
 //
-RF24 radio(PIN_RADIO2_CE, PIN_RADIO2_CSN);
+RF24 radio(PIN_RADIO1_CE, PIN_RADIO1_CSN);
 
-void configNRF();
+void configNRF(RF24 &radio);
 uint8_t radioBufferIn[RADIO_PACKET_SIZE];
-uint8_t radioBufferOut[RADIO_PACKET_SIZE];
 
 // Checks for communication and sets robot's state to IDDLE/ACTIVE
 void threadIddleDetection_run();
@@ -35,8 +34,7 @@ Thread threadNRF(threadNRF_run, 1000); // Starts listening after 1sec, then set 
 
 
 // This robot Address
-byte ADDRESS_ROBOT[6]            = "robt?";
-byte ADDRESS_STATION[6]          = "stat?";
+byte addresses[][6] = {"1Node","2Node"};
 
 // ====================================
 //           INITIALIZATION
@@ -44,50 +42,72 @@ byte ADDRESS_STATION[6]          = "stat?";
 
 void Commander::init(){
 
+  Serial.begin(SERIAL_SPEED);
+  while(!Serial);
+
   LOG("Commander::init"); ENDL;
   delay(10);
 
   // Initialize Radio
   LOG("Radio::init"); ENDL;
   delay(10);
+
   radio.begin();
   LOG("Radio::init OK"); ENDL;
   delay(10);
 
-  // Change ADDRESS_ROBOT to match with Robot's id (from eeprom)
-  ADDRESS_ROBOT[4]   = Robot::getRobotID();
-  ADDRESS_STATION[4] = Robot::getRobotID();
-
   // Configure Radio
-  configNRF();
+  configNRF(radio);
 
-  // Listen to it's own ID
-  radio.openReadingPipe(1, ADDRESS_ROBOT);
-  radio.openWritingPipe(ADDRESS_STATION);
-
+  radio.openWritingPipe(addresses[1]);
+  radio.openReadingPipe(1,addresses[0]);
   radio.startListening();
+
+  // // Change ADDRESS_ROBOT to match with Robot's id (from eeprom)
+  // ADDRESS_ROBOT[4]   = Robot::getRobotID();
+  // ADDRESS_STATION[4] = Robot::getRobotID();
+
+
+  // // Listen to it's own ID
+  // radio.openReadingPipe(1, ADDRESS_ROBOT);
+  // radio.openWritingPipe(ADDRESS_STATION);
+
+  // radio.startListening();
 
   controller.add(&threadIddleDetection);
   controller.add(&threadSerial);
   controller.add(&threadNRF);
 }
 
-void configNRF(){
+void configNRF(RF24 &radio){
   // Configure Radio
+  radio.powerUp();
+
   if(!radio.setDataRate(RF24_1MBPS)){
-    LOG(" ! Failed to setup Radio"); ENDL;
+    LOG(" ! Failed to setup Radio");
+    ENDL;
     while(1){
-      Robot::doBeep(10, 10, 2);
+      LOG(".");
+      digitalWrite(PIN_LED2, !digitalRead(PIN_LED2));
+      delay(1000);
     }
   }
   radio.setPALevel(RF24_PA_MAX);
   radio.setChannel(108);
-  radio.setPayloadSize(RADIO_PACKET_SIZE);
-  radio.setRetries(0, 0);
-  radio.setAutoAck(true);
-  radio.startListening();
-}
+  radio.setRetries(0, 1);
 
+  #ifdef DEBUG
+    LOG("Radio Configured with settings: "); ENDL;
+    LOG("Radio Channel: ");
+    LOG(radio.getChannel()); ENDL;
+    LOG("Radio PA Level: ");
+    LOG(radio.getPALevel()); ENDL;
+    LOG("Radio Data Rate: ");
+    LOG(radio.getDataRate()); ENDL;
+    LOG("Radio CRC Lenght: ");
+    LOG(radio.getCRCLength()); ENDL;
+  #endif
+}
 
 // ====================================
 // Does a sweep scan on the radio Freq.
@@ -154,7 +174,7 @@ void Commander::scanRadio(){
   Serial.println();
 
   // Roll back modifications
-  configNRF();
+  configNRF(radio);
 }
 
 
@@ -271,6 +291,7 @@ void threadSerial_run(){
 void threadNRF_run(){
   
   static bool available;
+  static bool gotMyPackage;
   static bool activate;
   long start = millis();
 
@@ -278,6 +299,8 @@ void threadNRF_run(){
   threadNRF.setInterval(0);
 
   available = false;
+  gotMyPackage = false;
+
   while (radio.available()) {
     available = true;
     radio.read(&radioBufferIn, RADIO_PACKET_SIZE);
@@ -290,17 +313,38 @@ void threadNRF_run(){
     return;
   
   // Parse message
-  activate = radioBufferIn[0];
+  uint8_t robotQuantity = radioBufferIn[0];
+  uint8_t robotId = 0;
+  bool active = 0;
+  int16_t robotYSpeed = 0;
+  int16_t robotTSpeed = 0;
+  uint8_t myRobotId = 0;
 
-  int16_t _targetY     = radioBufferIn[1] | (radioBufferIn[2] << 8);
-  int16_t _targetTheta = radioBufferIn[3] | (radioBufferIn[4] << 8);
+  for(int i=0; i < robotQuantity; i++){
+    robotId = radioBufferIn[1+(i*ROBOT_PACKET_SIZE)];
+    if(robotId == Robot::getRobotID()){
+      myRobotId = robotId;
+      active = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
+      robotYSpeed = radioBufferIn[3+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[4+(i*ROBOT_PACKET_SIZE)] << 8);
+      robotTSpeed = radioBufferIn[5+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[6+(i*ROBOT_PACKET_SIZE)] << 8);
+      #ifdef DEBUG
+        LOG("Found my ID among those ");
+        LOG(robotQuantity); 
+        LOG(" robots!");ENDL; 
+        LOG("robotId: ");
+        LOG(robotId); ENDL;
+        LOG("active: ");
+        LOG(active); ENDL;
+        LOG("robotYSpeed: ");
+        LOG(robotYSpeed); ENDL;
+        LOG("robotTSpeed: ");
+        LOG(robotTSpeed); ENDL;
+      #endif
+    }
 
-  float targetY     =     _targetY / FLOAT_MULTIPLIER;
-  float targetTheta = _targetTheta / FLOAT_MULTIPLIER;
-
-  Controller::setTarget(0, targetY, targetTheta);
-
-  radio.startListening();
+    Controller::setTarget(0, robotYSpeed, robotTSpeed);
+    radio.startListening();
+  }
 
   // Got message. Robot is now Active if message was an action message
   if(Robot::alarm == NONE){

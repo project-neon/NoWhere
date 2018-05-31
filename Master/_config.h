@@ -67,7 +67,8 @@
 //
 #define RADIO_MASTER_ADDRESS   1
 #define RADIO_TIMEOUT_TO_IDDLE 2000
-#define RADIO_PACKET_SIZE      8
+#define RADIO_PACKET_SIZE      32
+#define ROBOT_PACKET_SIZE      6
 #define FLOAT_MULTIPLIER       10.0
 
 //
