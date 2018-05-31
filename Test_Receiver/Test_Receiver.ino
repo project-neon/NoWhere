@@ -142,12 +142,6 @@ void loop(){
       active = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
       robotYSpeed = radioBufferIn[3+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[4+(i*ROBOT_PACKET_SIZE)] << 8);
       robotTSpeed = radioBufferIn[5+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[6+(i*ROBOT_PACKET_SIZE)] << 8);
-      radioIn.stopListening();
-      LOG("receivedMessage: ");
-      LOG(myRobotId);ENDL;
-      radioIn.openWritingPipe(addresses[1]);
-      radioIn.write( myRobotId, sizeof(byte) );              // Send the final one back.      
-      radioIn.startListening();  
       #ifdef DEBUG
         LOG("Found my ID among those ");
         LOG(robotQuantity); 

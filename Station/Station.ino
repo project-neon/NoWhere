@@ -47,8 +47,8 @@
 #define DEBUG
 
 // Radio Harware Pins
-#define PIN_RADIO1_CE       7
-#define PIN_RADIO1_CSN      6
+#define PIN_RADIO_CE       7
+#define PIN_RADIO_CSN      6
 #define PIN_LED             13
 
 // Transmission Stuff
@@ -71,7 +71,7 @@ int robotQuantity = 0;
 void handleMessage();
 
 // Radio Objects
-RF24 radio(PIN_RADIO1_CE, PIN_RADIO1_CSN);
+RF24 radio(PIN_RADIO_CE, PIN_RADIO_CSN);
 
 //Data Holders
 char serialDataIn[64];
@@ -199,17 +199,6 @@ void loop(){
   if(newPacket){
     handleMessage();
   }
-
-  radio.startListening();
-  
-  while (radio.available()){    
-
-    radio.read(&radioAck, sizeof(byte));             // Get the payload
-  }
-
-  LOG("This is the response: ");
-  LOG(radioAck);ENDL;
-
 }
 
 void handleMessage(){ 
@@ -233,7 +222,6 @@ void handleMessage(){
     LOG("nok message start token not found"); LOG(serialDataIn[0], HEX); ENDL;
     return;
   }
-
   // Parse Second item
   if(serialDataIn[1] == ':' && serialDataIn[2] == 's'){
     EEPROM.write(ROBOT_QUANTITY_ADDRESS,int(serialDataIn[3])-'0');
