@@ -1,5 +1,5 @@
 #include <Wire.h>
-#include <I2Cdev.h>
+//#include <I2Cdev.h>
 #include <MPU6050_6Axis_MotionApps20.h>
 
 MPU6050 mpu;
@@ -47,8 +47,8 @@ bool IMU_init(){
   mpu.setXGyroOffset(83);
   mpu.setYGyroOffset(-3);
   mpu.setZGyroOffset(48);
-  mpu.setZAccelOffset(1974); // 1688 factory default for my test chip
-
+  mpu.setZAccelOffset(1974);
+  
   // make sure it worked (returns 0 if so)
   if (devStatus != 0) {
     // ERROR!
@@ -58,6 +58,7 @@ bool IMU_init(){
     Serial.print("DMP Initialization failed (code ");
     Serial.print(devStatus);
     Serial.println(")");
+    haltLED(5);
   }
 
   // Enable Digital Motion Procesing

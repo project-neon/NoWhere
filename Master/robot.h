@@ -72,7 +72,7 @@ public:
   static BeepState beepState;
 
   static void setBeep(BeepState state);
-  static void doBeep(int _times, int interval);
+  static void doBeep(int _times, int interval, int _reason);
 
 
   // ====================================

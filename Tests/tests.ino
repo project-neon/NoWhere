@@ -54,5 +54,21 @@ void loop(){
         digitalWrite(PIN_M2_IN2, HIGH);
         analogWrite(PIN_M2_EN, 0);
     }
+    else if(in == 'a'){
+        digitalWrite(PIN_M1_IN1, LOW);
+        digitalWrite(PIN_M1_IN2, HIGH);
+        analogWrite(PIN_M1_EN, 120);
+        digitalWrite(PIN_M2_IN1, HIGH);
+        digitalWrite(PIN_M2_IN2, LOW);
+        analogWrite(PIN_M2_EN, 120);
+    }
+    else if(in == 'd'){
+        digitalWrite(PIN_M1_IN1, HIGH);
+        digitalWrite(PIN_M1_IN2, LOW);
+        analogWrite(PIN_M1_EN, 120);
+        digitalWrite(PIN_M2_IN1, LOW);
+        digitalWrite(PIN_M2_IN2, HIGH);
+        analogWrite(PIN_M2_EN, 120);
+    }
   }
 }

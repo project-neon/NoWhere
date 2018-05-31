@@ -82,9 +82,9 @@ void Robot::setAlarm(RobotAlarm _alarm){
   Robot::alarm = _alarm;
 
   if(_alarm != NONE){
-    LOG("Alarm set: "); LOG(_alarm); LOG("\n");
+    LOG("Alarm set: "); LOG(_alarm); ENDL;
     threadBeeper.enabled = true;
-    Robot::doBeep(5, 30);
+    Robot::doBeep(5, 30, 5);
     Robot::setState(IDDLE);
   }else{
     LOG("Alarm clear\n");
@@ -110,17 +110,17 @@ void Robot::setBeep(BeepState state){
   Robot::beepState = state;
   threadBeeper.enabled = true;
 
-  LOG("Beep State: "); LOG(state); LOG("\n");
+  LOG("Beep State: "); LOG(state); ENDL;
 }
 
-void Robot::doBeep(int _times, int interval){
+void Robot::doBeep(int _times, int interval, int _reason){
   Robot::beepTimes = _times;
   Robot::beepInterval = interval;
 
   // Make sure Thread will run
   threadBeeper.enabled = true;
 
-  LOG("Beep times: "); LOG(_times); LOG("\n");
+  LOG("Beep times: "); LOG(_times); LOG(" Reason: "); LOG(_reason); ENDL;
 }
 
 void threadBeeper_run(){

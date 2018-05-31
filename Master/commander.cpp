@@ -77,17 +77,17 @@ void configNRF(){
   if(!radio.setDataRate(RF24_1MBPS)){
     LOG(" ! Failed to setup Radio"); ENDL;
     while(1){
-      Robot::doBeep(10, 10);
+      Robot::doBeep(10, 10, 2);
     }
   }
   radio.setPALevel(RF24_PA_MAX);
-  radio.setCRCLength(RF24_CRC_8);
   radio.setChannel(108);
   radio.setPayloadSize(RADIO_PACKET_SIZE);
   radio.setRetries(0, 0);
   radio.setAutoAck(true);
   radio.startListening();
 }
+
 
 // ====================================
 // Does a sweep scan on the radio Freq.
@@ -169,7 +169,7 @@ void threadIddleDetection_run(){
 
   if(millis() - Robot::lastTimeActive > RADIO_TIMEOUT_TO_IDDLE){
     Robot::setState(IDDLE);
-    Robot::doBeep(2, 50);
+    Robot::doBeep(2, 50, 3);
   }
 }
 
@@ -187,21 +187,15 @@ void threadSerial_run(){
   ENDL;
   LOG("Cmd:"); LOG(got); ENDL;
 
-  if(got == '1')
+  if(got == '1'){
+    Robot::setState(ACTIVE);
     Motors::setPower(100, 0);
-
-  else if(got == '2')
+  }
+  else if(got == '2'){
+    Robot::setState(ACTIVE);
     Motors::setPower(-100, 0);
-
-  else if(got == '3')
-    Motors::setPower(0, 100);
-
-  else if(got == '4')
-    Motors::setPower(0, -100);
-
-  else if(got == '8'){
-    Controller::setTarget(0, 50, 90);
-  }else if(got == '0'){
+  }
+  else if(got == '0'){
     Controller::setTarget(0, 0, 0);
     Motors::stop();
   }else if(got == 'b'){
@@ -254,6 +248,12 @@ void threadSerial_run(){
     LOG("---- help ----");
     ENDL;
     LOG("0: Stop motors"); ENDL;
+    LOG("1: Left Motor Front"); ENDL;
+    LOG("2: Left Motor Back"); ENDL;
+    LOG("3: Right Motor Front"); ENDL;
+    LOG("4: Right Motor Back"); ENDL;
+    LOG("5: Motors Front"); ENDL;
+    LOG("6: Motors Back"); ENDL;
     LOG("d: Enable debug flag"); ENDL;
     LOG("b: Get bat. voltage"); ENDL;
     LOG("i: View robot ID"); ENDL;
@@ -269,6 +269,7 @@ void threadSerial_run(){
 // ====================================
 
 void threadNRF_run(){
+  
   static bool available;
   static bool activate;
   long start = millis();
@@ -279,8 +280,9 @@ void threadNRF_run(){
   available = false;
   while (radio.available()) {
     available = true;
-    radio.read( &radioBufferIn, RADIO_PACKET_SIZE);
-    LOG("Rec packet: "); LOG((char*) radioBufferIn); ENDL;
+    radio.read(&radioBufferIn, RADIO_PACKET_SIZE);
+    // LOG("Rec packet: "); LOG((char*) radioBufferIn); ENDL;
+    // LOG(radioBufferIn[0]);LOG(":");LOG(radioBufferIn[1] | (radioBufferIn[2] << 8));LOG(":");LOG(radioBufferIn[3] | (radioBufferIn[4] << 8));ENDL;
   }
 
   // Skip if no data received
@@ -298,21 +300,13 @@ void threadNRF_run(){
 
   Controller::setTarget(0, targetY, targetTheta);
 
-  // Build callback message
-  radioBufferOut[0] = radioBufferIn[0];
-  radioBufferOut[1] = Robot::state;
-  radioBufferOut[2] = Robot::vbat * 10;
-
-  // Send message
-  radio.stopListening();
-  radio.write(&radioBufferOut, 8);
   radio.startListening();
 
   // Got message. Robot is now Active if message was an action message
   if(Robot::alarm == NONE){
     if(Robot::state == IDDLE && activate){
       Robot::setState(ACTIVE);
-      Robot::doBeep(1, 100);
+      Robot::doBeep(1, 100, 4);
     }
 
     // Save timestamp of message

@@ -45,12 +45,10 @@
 #define LOG                    Serial.print
 #define ENDL                   LOG(F("\r\n"))
 
-
 //
 // Motors config (H-Bridge)
 //
 #define MOTOR_ABS_MAX          255
-
 
 //
 // VBat Reader
@@ -60,10 +58,9 @@
 #define BAT_DROP               0.26
 #define VBAT_VOLTAGE(adc)      (adc / (1023 / 5.0)) * (BAT_R1 + BAT_R2) * (1.0 / BAT_R2) + BAT_DROP
 
-#define VBAT_ALARMED           7.10
-#define VBAT_WARNED            7.40
+#define VBAT_ALARMED           6.90
+#define VBAT_WARNED            7.10
 #define VBAT_USB               5.10
-
 
 //
 // RADIO Configs (NRF24L01)

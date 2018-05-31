@@ -142,13 +142,13 @@ void threadController_run(){
   if(!Robot::onFloor){
     resetControl();
     if(wasOnFloor)
-      Robot::doBeep(1, 80);
+      Robot::doBeep(1, 80, 0);
 
     wasOnFloor = false;
 
     return;
   }else if(!wasOnFloor){
-    Robot::doBeep(int(Robot::getRobotID())-'0', 80);
+    Robot::doBeep(int(Robot::getRobotID())-'0', 80, 1);
     wasOnFloor = true;
   }
 
