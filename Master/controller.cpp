@@ -112,7 +112,8 @@ void threadController_run(){
 
   // Skip if dt is too large or too small
   if(dt > 0.1 || dt <= 0.0){
-    LOG(" ! Weird dt\n");
+    LOG(" ! Weird dt:");
+    LOG(dt);  ENDL;
     return;
   }
 
@@ -129,7 +130,7 @@ void threadController_run(){
 
   // Rate is absurd? Skip this controll.
   if(rateThetha < -1000 || rateThetha > 1000){
-    LOG(" ! theta "); LOG(rateThetha); ENDL;
+    LOG(" ! theta "); 
     return;
   }
 

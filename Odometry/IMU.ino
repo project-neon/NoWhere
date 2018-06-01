@@ -44,10 +44,10 @@ bool IMU_init(){
   devStatus = mpu.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity
-  mpu.setXGyroOffset(83);
-  mpu.setYGyroOffset(-3);
-  mpu.setZGyroOffset(48);
-  mpu.setZAccelOffset(1974);
+  mpu.setXGyroOffset(-28);
+  mpu.setYGyroOffset(-19);
+  mpu.setZGyroOffset(35);
+  mpu.setZAccelOffset(1839);
   
   // make sure it worked (returns 0 if so)
   if (devStatus != 0) {

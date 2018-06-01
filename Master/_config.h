@@ -17,7 +17,7 @@
 #define PIN_M1_IN2             A1
 
 #define PIN_M2_EN              6
-#define PIN_M2_IN1             A4
+#define PIN_M2_IN1             10
 #define PIN_M2_IN2             4
 
 #define PIN_BTN                0
@@ -28,8 +28,8 @@
 #define PIN_RADIO1_CSN         9
 #define PIN_RADIO1_INTERRUPT   0
 
-#define PIN_RADIO2_CE          10
-#define PIN_RADIO2_CSN         11
+// #define PIN_RADIO2_CE          10
+// #define PIN_RADIO2_CSN         11
 
 //
 // Project

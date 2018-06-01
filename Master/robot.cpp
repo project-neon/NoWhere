@@ -44,18 +44,18 @@ void Robot::init(){
 //   SPECIFIC CONFIGURATIONS (EEPROM)
 // ====================================
 
-char _id = 0x00;
-char Robot::getRobotID(){
-  if(_id == 0x00){
+int _id = 0;
+int Robot::getRobotID(){
+  if(_id == 0){
     // Load from Eeprom if not loaded yet
     _id = EEPROM.read(EEPROM_ROBOT_ID);
   }
   return _id;
 }
 
-void Robot::setRobotID(char id){
+void Robot::setRobotID(int id){
   // Clear cache (Force re-reading)
-  _id = 0x00;
+  _id = 0;
   EEPROM.write(EEPROM_ROBOT_ID, id);
 }
 

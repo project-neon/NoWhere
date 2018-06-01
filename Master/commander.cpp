@@ -49,9 +49,6 @@ void Commander::init(){
   delay(10);
 
   // Initialize Radio
-  LOG("Radio::init"); ENDL;
-  delay(10);
-
   radio.begin();
   LOG("Radio::init OK"); ENDL;
   delay(10);
@@ -94,19 +91,17 @@ void configNRF(RF24 &radio){
   }
   radio.setPALevel(RF24_PA_MAX);
   radio.setChannel(108);
-  radio.setRetries(0, 1);
+  radio.setRetries(0, 0);
 
-  #ifdef DEBUG
-    LOG("Radio Configured with settings: "); ENDL;
-    LOG("Radio Channel: ");
-    LOG(radio.getChannel()); ENDL;
-    LOG("Radio PA Level: ");
-    LOG(radio.getPALevel()); ENDL;
-    LOG("Radio Data Rate: ");
-    LOG(radio.getDataRate()); ENDL;
-    LOG("Radio CRC Lenght: ");
-    LOG(radio.getCRCLength()); ENDL;
-  #endif
+  LOG("Radio Configured with settings: "); ENDL;
+  LOG("Radio Channel: ");
+  LOG(radio.getChannel()); ENDL;
+  LOG("Radio PA Level: ");
+  LOG(radio.getPALevel()); ENDL;
+  LOG("Radio Data Rate: ");
+  LOG(radio.getDataRate()); ENDL;
+  LOG("Radio CRC Lenght: ");
+  LOG(radio.getCRCLength()); ENDL;
 }
 
 // ====================================
@@ -227,7 +222,7 @@ void threadSerial_run(){
       char newId = Serial.read();
       if(newId != '\r' && newId != '\n'){
         LOG("Id set! RESTART to change Radio"); ENDL;
-        Robot::setRobotID(newId);
+        Robot::setRobotID(int(newId)-'0');
       }
     }
 
@@ -289,9 +284,8 @@ void threadSerial_run(){
 // ====================================
 
 void threadNRF_run(){
-  
+
   static bool available;
-  static bool gotMyPackage;
   static bool activate;
   long start = millis();
 
@@ -299,11 +293,15 @@ void threadNRF_run(){
   threadNRF.setInterval(0);
 
   available = false;
-  gotMyPackage = false;
 
   while (radio.available()) {
     available = true;
     radio.read(&radioBufferIn, RADIO_PACKET_SIZE);
+    // for (int i=0; i < RADIO_PACKET_SIZE; i++){
+    //   LOG("radio buffer");
+    //   LOG(radioBufferIn[i]);
+    //    ENDL;
+    // }
     // LOG("Rec packet: "); LOG((char*) radioBufferIn); ENDL;
     // LOG(radioBufferIn[0]);LOG(":");LOG(radioBufferIn[1] | (radioBufferIn[2] << 8));LOG(":");LOG(radioBufferIn[3] | (radioBufferIn[4] << 8));ENDL;
   }
@@ -315,50 +313,52 @@ void threadNRF_run(){
   // Parse message
   uint8_t robotQuantity = radioBufferIn[0];
   uint8_t robotId = 0;
-  bool active = 0;
   int16_t robotYSpeed = 0;
   int16_t robotTSpeed = 0;
   uint8_t myRobotId = 0;
 
   for(int i=0; i < robotQuantity; i++){
     robotId = radioBufferIn[1+(i*ROBOT_PACKET_SIZE)];
+    LOG(Robot::getRobotID());
     if(robotId == Robot::getRobotID()){
       myRobotId = robotId;
-      active = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
+      activate = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
       robotYSpeed = radioBufferIn[3+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[4+(i*ROBOT_PACKET_SIZE)] << 8);
       robotTSpeed = radioBufferIn[5+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[6+(i*ROBOT_PACKET_SIZE)] << 8);
-      #ifdef DEBUG
-        LOG("Found my ID among those ");
-        LOG(robotQuantity); 
-        LOG(" robots!");ENDL; 
-        LOG("robotId: ");
-        LOG(robotId); ENDL;
-        LOG("active: ");
-        LOG(active); ENDL;
-        LOG("robotYSpeed: ");
-        LOG(robotYSpeed); ENDL;
-        LOG("robotTSpeed: ");
-        LOG(robotTSpeed); ENDL;
-      #endif
+
+      robotYSpeed = robotYSpeed / FLOAT_MULTIPLIER;
+      robotTSpeed = robotTSpeed / FLOAT_MULTIPLIER;
+
+      Controller::setTarget(0, robotYSpeed, robotTSpeed);
+      radio.startListening();
+
+      // Force Disable robot if said
+      if(!activate){
+        Robot::setState(IDDLE);
+      }
+
+      // Got message. Robot is now Active if message was an action message
+      if(Robot::alarm == NONE){
+        if(Robot::state == IDDLE && activate){
+          Robot::setState(ACTIVE);
+          Robot::doBeep(2, 100, 4);
+        }
+        // Save timestamp of message
+        Robot::lastTimeActive = millis();
+      }
+
+      LOG("Found my ID among those ");
+      LOG(robotQuantity); 
+      LOG(" robots!");ENDL; 
+      LOG("robotId: ");
+      LOG(robotId); ENDL;
+      LOG("activate: ");
+      LOG(activate); ENDL;
+      LOG("robotYSpeed: ");
+      LOG(robotYSpeed); ENDL;
+      LOG("robotTSpeed: ");
+      LOG(robotTSpeed); ENDL;
+
     }
-
-    Controller::setTarget(0, robotYSpeed, robotTSpeed);
-    radio.startListening();
-  }
-
-  // Got message. Robot is now Active if message was an action message
-  if(Robot::alarm == NONE){
-    if(Robot::state == IDDLE && activate){
-      Robot::setState(ACTIVE);
-      Robot::doBeep(1, 100, 4);
-    }
-
-    // Save timestamp of message
-    Robot::lastTimeActive = millis();
-  }
-
-  // Force Disable robot if said
-  if(!activate){
-    Robot::setState(IDDLE);
   }
 }

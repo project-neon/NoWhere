@@ -142,19 +142,17 @@ void loop(){
       active = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
       robotYSpeed = radioBufferIn[3+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[4+(i*ROBOT_PACKET_SIZE)] << 8);
       robotTSpeed = radioBufferIn[5+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[6+(i*ROBOT_PACKET_SIZE)] << 8);
-      #ifdef DEBUG
-        LOG("Found my ID among those ");
-        LOG(robotQuantity); 
-        LOG(" robots!");ENDL; 
-        LOG("robotId: ");
-        LOG(robotId); ENDL;
-        LOG("active: ");
-        LOG(active); ENDL;
-        LOG("robotYSpeed: ");
-        LOG(robotYSpeed); ENDL;
-        LOG("robotTSpeed: ");
-        LOG(robotTSpeed); ENDL;
-      #endif
+      LOG("Found my ID among those ");
+      LOG(robotQuantity); 
+      LOG(" robots!");ENDL; 
+      LOG("robotId: ");
+      LOG(robotId); ENDL;
+      LOG("active: ");
+      LOG(active); ENDL;
+      LOG("robotYSpeed: ");
+      LOG(robotYSpeed); ENDL;
+      LOG("robotTSpeed: ");
+      LOG(robotTSpeed); ENDL;
     }  
   }
 }

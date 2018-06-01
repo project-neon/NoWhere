@@ -20,8 +20,8 @@ public:
   //   SPECIFIC CONFIGURATIONS (EEPROM)
   // ====================================
 
-  static char getRobotID();
-  static void setRobotID(char id);
+  static int getRobotID();
+  static void setRobotID(int id);
 
 
   // ====================================
