@@ -210,9 +210,26 @@ void threadSerial_run(){
     Robot::setState(ACTIVE);
     Motors::setPower(-100, 0);
   }
+  else if(got == '3'){
+    Robot::setState(ACTIVE);
+    Motors::setPower(0, 100);
+  }
+  else if(got == '4'){
+    Robot::setState(ACTIVE);
+    Motors::setPower(0, -100);
+  }
+   else if(got == '5'){
+    Robot::setState(ACTIVE);
+    Motors::setPower(100, 100);
+  }
+   else if(got == '6'){
+    Robot::setState(ACTIVE);
+    Motors::setPower(-100, -100);
+  }
   else if(got == '0'){
     Controller::setTarget(0, 0, 0);
     Motors::stop();
+
   }else if(got == 'b'){
     LOG("Battery: "); LOG(Robot::vbat); ENDL;
 
@@ -263,10 +280,10 @@ void threadSerial_run(){
     LOG("---- help ----");
     ENDL;
     LOG("0: Stop motors"); ENDL;
-    LOG("1: Left Motor Front"); ENDL;
-    LOG("2: Left Motor Back"); ENDL;
-    LOG("3: Right Motor Front"); ENDL;
-    LOG("4: Right Motor Back"); ENDL;
+    LOG("1: Left A Motor Front"); ENDL;
+    LOG("2: Left A Motor Back"); ENDL;
+    LOG("3: Right B Motor Front"); ENDL;
+    LOG("4: Right B Motor Back"); ENDL;
     LOG("5: Motors Front"); ENDL;
     LOG("6: Motors Back"); ENDL;
     LOG("d: Enable debug flag"); ENDL;
@@ -319,7 +336,6 @@ void threadNRF_run(){
 
   for(int i=0; i < robotQuantity; i++){
     robotId = radioBufferIn[1+(i*ROBOT_PACKET_SIZE)];
-    LOG(Robot::getRobotID());
     if(robotId == Robot::getRobotID()){
       myRobotId = robotId;
       activate = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
@@ -346,19 +362,6 @@ void threadNRF_run(){
         // Save timestamp of message
         Robot::lastTimeActive = millis();
       }
-
-      LOG("Found my ID among those ");
-      LOG(robotQuantity); 
-      LOG(" robots!");ENDL; 
-      LOG("robotId: ");
-      LOG(robotId); ENDL;
-      LOG("activate: ");
-      LOG(activate); ENDL;
-      LOG("robotYSpeed: ");
-      LOG(robotYSpeed); ENDL;
-      LOG("robotTSpeed: ");
-      LOG(robotTSpeed); ENDL;
-
     }
   }
 }

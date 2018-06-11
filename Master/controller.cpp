@@ -131,9 +131,21 @@ void threadController_run(){
   // Rate is absurd? Skip this controll.
   if(rateThetha < -1000 || rateThetha > 1000){
     LOG(" ! theta "); 
+    /*LOG("\t");
+    LOG(rateThetha); 
+    LOG("\t");
+    LOG(lastRate);
+    LOG("\t"); 
+    LOG(dt);
+    ENDL; */
     return;
   }
-
+    /*LOG(rateThetha); 
+    LOG("\t");
+    LOG(lastRate);
+    LOG("\t"); 
+    LOG(dt);
+    ENDL;*/
   // Compute Y Speed rate
   rateSpeed = Robot::dy / dt / 1516.0;
 
@@ -149,7 +161,7 @@ void threadController_run(){
 
     return;
   }else if(!wasOnFloor){
-    Robot::doBeep(int(Robot::getRobotID())-'0', 80, 1);
+    Robot::doBeep(Robot::getRobotID(), 80, 1);
     wasOnFloor = true;
   }
 

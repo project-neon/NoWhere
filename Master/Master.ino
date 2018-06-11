@@ -26,7 +26,7 @@ void setup(){
 
   // Initialize Core system stuff
   System::init();
-
+  
   // Initialize Robot state and I/O Pins
   Robot::init();
 
