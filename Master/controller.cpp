@@ -157,7 +157,7 @@ void threadController_run(){
     if(wasOnFloor)
       Robot::doBeep(1, 80, 0);
 
-    wasOnFloor = false;
+      wasOnFloor = false;
 
     return;
   }else if(!wasOnFloor){
@@ -166,7 +166,7 @@ void threadController_run(){
   }
 
   // Checks if robot is in IDDLE state. Skip if so...
-  if(Robot::state == IDDLE){
+  if(Robot::state == ACTIVE){  // TROQUEI AQUI TEM VOLTAR AO NORMAL !!!!!!!!!!!!
      resetControl();
      return;
   }

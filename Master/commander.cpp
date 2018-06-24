@@ -41,10 +41,10 @@ byte addresses[][6] = {"1Node","2Node"};
 // ====================================
 
 void Commander::init(){
-
+/*
   Serial.begin(SERIAL_SPEED);
   while(!Serial);
-
+*/
   LOG("Commander::init"); ENDL;
   delay(10);
 
@@ -202,29 +202,37 @@ void threadSerial_run(){
   ENDL;
   LOG("Cmd:"); LOG(got); ENDL;
 
+  /* There is a bug related with this test motor command. In the first boot of robot,
+  motor don't work well, I don't know why, but i figure out a trick to solve this problem,
+  1º- Open the monitor serial ant type "@" then "d" and finilly ":q", after that motor work well.
+  */
+  
   if(got == '1'){
     Robot::setState(ACTIVE);
-    Motors::setPower(100, 0);
+    Motors::setPower(10, 0);
   }
   else if(got == '2'){
     Robot::setState(ACTIVE);
-    Motors::setPower(-100, 0);
+    Motors::setPower(-10, 0);
   }
   else if(got == '3'){
     Robot::setState(ACTIVE);
-    Motors::setPower(0, 100);
+    Motors::setPower(0, 10);
   }
   else if(got == '4'){
     Robot::setState(ACTIVE);
-    Motors::setPower(0, -100);
+    Motors::setPower(0, -10);
   }
-   else if(got == '5'){
+  else if(got == '5'){
     Robot::setState(ACTIVE);
-    Motors::setPower(100, 100);
+    Motors::setPower(10, 10);
   }
-   else if(got == '6'){
+  else if(got == '6'){
     Robot::setState(ACTIVE);
-    Motors::setPower(-100, -100);
+    Motors::setPower(-10, -10);
+  }
+  else if(got == '7'){
+  //Developing
   }
   else if(got == '0'){
     Controller::setTarget(0, 0, 0);
@@ -277,8 +285,7 @@ void threadSerial_run(){
     Commander::scanRadio();
   }else if(got == 'h'){
     ENDL;
-    LOG("---- help ----");
-    ENDL;
+    LOG("---- help ----"); ENDL;
     LOG("0: Stop motors"); ENDL;
     LOG("1: Left A Motor Front"); ENDL;
     LOG("2: Left A Motor Back"); ENDL;
@@ -286,6 +293,7 @@ void threadSerial_run(){
     LOG("4: Right B Motor Back"); ENDL;
     LOG("5: Motors Front"); ENDL;
     LOG("6: Motors Back"); ENDL;
+    LOG("7: Variable state"); ENDL; // Implemented because some bugs problably are releted with some variable states.
     LOG("d: Enable debug flag"); ENDL;
     LOG("b: Get bat. voltage"); ENDL;
     LOG("i: View robot ID"); ENDL;
