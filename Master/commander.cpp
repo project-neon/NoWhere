@@ -292,11 +292,11 @@ void threadSerial_run(){
     LOG("4: Right B Motor Back"); ENDL;
     LOG("5: Motors Front"); ENDL;
     LOG("6: Motors Back"); ENDL;
-    LOG("7: Erros"); ENDL; 
     LOG("d: Enable debug flag"); ENDL;
     LOG("b: Get bat. voltage"); ENDL;
     LOG("i: View robot ID"); ENDL;
     LOG("s: Scan NRF"); ENDL;
+    LOG("e: scanErrors"); ENDL;
     LOG("i<char>: Set robot id"); ENDL;
     LOG("@: Replicate odometry Serial"); ENDL;
   }

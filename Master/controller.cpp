@@ -32,12 +32,12 @@ Thread threadCheckInclinationAlarm(threadCheckInclinationAlarm_run, 500);
 //  PIDs Parameters. 
 
 //PID pidX(0.2f, 2.5f, 0.0f, 100);
-//PID pidY(7.0f, 0.0f, 0.0f, 0);
-//PID pidTheta(1.0f, 0.0f, 0.04f, 0);
+//PID pidY(7.0f*0.66, 0.0f, 0.0f, 0);    
+//PID pidTheta(1.0f*0.66, 0.0f, 0.04f*0.66, 0);
 
 //PID pidX(10.0f, 0.0f, 0.0f, 100);  We don't use it anymore !
-PID pidY(10.0f, 0.0f, 0.0f, 0);
-PID pidTheta(2.0f, 5.0f, 0.03f, 0);
+PID pidY(-10.0f, 0.0f, 0.00f, 100);
+PID pidTheta(1.0f, 0.1f, 0.00f, 0);
 
 void resetControl();
 
