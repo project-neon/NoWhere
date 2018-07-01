@@ -24,6 +24,7 @@ public:
   static float targetY;
   static float targetTheta;
 
+  static void scanErrors();
   static void setTarget(float targetX, float targetY, float targetTheta);
   static void setPIDConstants(float kp, float ki, float kd, float iLimit);
 };

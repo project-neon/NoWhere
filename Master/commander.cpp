@@ -231,9 +231,6 @@ void threadSerial_run(){
     Robot::setState(ACTIVE);
     Motors::setPower(-10, -10);
   }
-  else if(got == '7'){
-  //Developing
-  }
   else if(got == '0'){
     Controller::setTarget(0, 0, 0);
     Motors::stop();
@@ -283,6 +280,8 @@ void threadSerial_run(){
   }else if(got == 's'){
     Motors::stop();
     Commander::scanRadio();
+  }else if(got == 'e'){ // 
+    Controller::scanErrors();
   }else if(got == 'h'){
     ENDL;
     LOG("---- help ----"); ENDL;
@@ -293,7 +292,7 @@ void threadSerial_run(){
     LOG("4: Right B Motor Back"); ENDL;
     LOG("5: Motors Front"); ENDL;
     LOG("6: Motors Back"); ENDL;
-    LOG("7: Variable state"); ENDL; // Implemented because some bugs problably are releted with some variable states.
+    LOG("7: Erros"); ENDL; 
     LOG("d: Enable debug flag"); ENDL;
     LOG("b: Get bat. voltage"); ENDL;
     LOG("i: View robot ID"); ENDL;

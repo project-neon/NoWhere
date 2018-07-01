@@ -13,6 +13,12 @@
 //
 // Local variables/objects
 //
+
+float errY = 0;
+float errTheta = 0;
+float errsample = 0;
+
+
 void threadController_run();
 Thread threadController(threadController_run, 0);
 
@@ -22,9 +28,16 @@ Thread threadCheckInclinationAlarm(threadCheckInclinationAlarm_run, 500);
 //
 // PID's
 //
-PID pidX(0.2f, 2.5f, 0.0f, 100);
-PID pidY(7.0f, 0.0f, 0.0f, 0);
-PID pidTheta(1.0f, 0.0f, 0.04f, 0);
+
+//  PIDs Parameters. 
+
+//PID pidX(0.2f, 2.5f, 0.0f, 100);
+//PID pidY(7.0f, 0.0f, 0.0f, 0);
+//PID pidTheta(1.0f, 0.0f, 0.04f, 0);
+
+//PID pidX(10.0f, 0.0f, 0.0f, 100);  We don't use it anymore !
+PID pidY(10.0f, 0.0f, 0.0f, 0);
+PID pidTheta(2.0f, 5.0f, 0.03f, 0);
 
 void resetControl();
 
@@ -131,21 +144,8 @@ void threadController_run(){
   // Rate is absurd? Skip this controll.
   if(rateThetha < -1000 || rateThetha > 1000){
     LOG(" ! theta "); 
-    /*LOG("\t");
-    LOG(rateThetha); 
-    LOG("\t");
-    LOG(lastRate);
-    LOG("\t"); 
-    LOG(dt);
-    ENDL; */
     return;
   }
-    /*LOG(rateThetha); 
-    LOG("\t");
-    LOG(lastRate);
-    LOG("\t"); 
-    LOG(dt);
-    ENDL;*/
   // Compute Y Speed rate
   rateSpeed = Robot::dy / dt / 1516.0;
 
@@ -166,7 +166,7 @@ void threadController_run(){
   }
 
   // Checks if robot is in IDDLE state. Skip if so...
-  if(Robot::state == ACTIVE){  // TROQUEI AQUI TEM VOLTAR AO NORMAL !!!!!!!!!!!!
+  if(Robot::state == IDDLE){  // TROQUEI AQUI TEM VOLTAR AO NORMAL !!!!!!!!!!!!
      resetControl();
      return;
   }
@@ -192,25 +192,39 @@ void threadController_run(){
 
   Motors::setPower(pwrLeft, pwrRight);
 
-  float errY = pow(Controller::targetY - rateSpeed, 2);
-  float errTheta = pow(Controller::targetTheta - rateThetha, 2);
+  errY = pow(Controller::targetY - rateSpeed, 2);
+  errTheta = pow(Controller::targetTheta - rateThetha, 2);
+  errsample = now;
 
   // Log if debug is enabled
+  /*
   if(Robot::debug){
     LOG("\tdt: "); LOG(dt * 1000);
     LOG("\terrY: "); LOG(errY);
     LOG("\terrT: "); LOG(errTheta);
     LOG("\r\n");
   }
-
+  */
+  Controller::scanErrors();
 }
 
 // Resets the PID and stop motors
 void resetControl(){
   Motors::stop();
   pidY.reset();
-  pidX.reset();
+
+  // pidX.reset(); We don't use it anymore !
+
   pidTheta.reset();
   pwrLeft = 0;
   pwrRight = 0;
+}
+  //
+void Controller::scanErrors(){
+    LOG("\ttempo: "); LOG(errsample);
+    LOG("\t ; ");
+    LOG("\terrY: "); LOG(errY);
+    LOG("\t ; ");
+    LOG("\terrT: "); LOG(errTheta);
+    LOG("\r\n");
 }

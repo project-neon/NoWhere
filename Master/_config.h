@@ -12,6 +12,16 @@
 
 #define PIN_BUZZER             A5
 
+#define PIN_M1_EN              5
+#define PIN_M1_IN1             A1
+#define PIN_M1_IN2             A0
+
+#define PIN_M2_EN              6	
+#define PIN_M2_IN1             4	
+#define PIN_M2_IN2             10
+
+/*
+Liner don't work
 #define PIN_M1_EN              6
 #define PIN_M1_IN1             10
 #define PIN_M1_IN2             4
@@ -19,6 +29,16 @@
 #define PIN_M2_EN              5	
 #define PIN_M2_IN1             A0	
 #define PIN_M2_IN2             A1
+
+Theta dont work
+#define PIN_M1_EN              6
+#define PIN_M1_IN1             4
+#define PIN_M1_IN2             10
+
+#define PIN_M2_EN              5	
+#define PIN_M2_IN1             A1	
+#define PIN_M2_IN2             A0
+*/
 
 #define PIN_BTN                0
 

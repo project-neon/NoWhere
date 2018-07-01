@@ -37,6 +37,8 @@
 
       thetaSpeed -> FLOAT, robot's angular speed in degrees/s
     
+      Front Robot reference -> USB Port
+
     - Commands are delimited by '\n'
       
 */
