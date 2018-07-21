@@ -22,11 +22,11 @@ Thread threadWatchdog(threadWatchdog_run, 500);
 void System::init(){
 
   // Initialize Serial and Wait to be ok
-
+/*
   Serial.begin(SERIAL_SPEED);
   while(!Serial);
   delay(50);
-
+*/
   LOG("\n===== "); LOG(PROJECT_NAME); LOG(" =====\n");
   LOG(PROJECT_VERSION); LOG("\n\n");
 
