@@ -19,7 +19,7 @@
       '::s?' ? being the number of robots you wish to comunicate
     - Start and finish always with the token ":", and send as this:
     
-      :[TARGET_ROBOT1_ID];[STATE];[linearSpeed];[thetaSpeed]:[TARGET_ROBOT2_ID];[STATE];[linearSpeed];[thetaSpeed]:[TARGET_ID];[STATE];[linearSpeed];[thetaSpeed];
+      :[TARGET_ROBOT_ID];[STATE];[linearSpeed];[thetaSpeed]:[TARGET_ROBOT2_ID];[STATE];[linearSpeed];[thetaSpeed]:[TARGET_ID];[STATE];[linearSpeed];[thetaSpeed];
       
       or:
       
@@ -206,6 +206,7 @@ void handleMessage(){
   #ifdef DEBUG
     unsigned long took = millis();
   #endif
+  
   static bool ack;
   float tmpFloat;
   int endIndex = 0;
