@@ -46,7 +46,7 @@
 // Make logging Easier
 #define LOG                 Serial.print
 #define ENDL                LOG("\n")
-#define DEBUG
+// #define DEBUG               
 
 // Radio Harware Pins
 #define PIN_RADIO_CE       7

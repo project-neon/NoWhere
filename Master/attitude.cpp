@@ -10,14 +10,18 @@
 #include "system.h"
 #include "attitude.h"
 
-
-#define ODOMETRY_PACKET_SIZE    9
-
-// Checks for incoming packets from Odometry
+// Checks for incoming packets from Odometry each 1ms
 void threadOdometry_run();
 Thread threadOdometry(threadOdometry_run, 1);
 
+// ====================================
+//           INITIALIZATION
+// ====================================
+
 void Attitude::init(){
+  
+  // Initializes the Thread and the second Serial Interface
+  
   LOG("Attitude::init\n");
 
   Serial1.begin(115200);
@@ -25,14 +29,21 @@ void Attitude::init(){
   controller.add(&threadOdometry);
 }
 
+// ====================================
+//          THREAD CALLBACKS
+// ====================================
+
+// Flag for new data 
 bool Attitude::newData = false;
 
+// Buffer to hold Serial Data
 uint8_t buffer[ODOMETRY_PACKET_SIZE];
-void threadOdometry_run(){
 
+// Odometry Function
+void threadOdometry_run(){
   // Check if any byte available
   while(Serial1.available()){
-    unsigned long start = micros();
+
     // Move bytes together
     memmove(buffer + 0, buffer + 1, ODOMETRY_PACKET_SIZE - 1);
 
@@ -48,9 +59,7 @@ void threadOdometry_run(){
       Robot::inclinated,
       Robot::onFloor);
 
-    unsigned long end = micros();
-
-    // Serial.println(buffer[0], BIN);
+    // If packet is OK then make the new data flag go true
     if(success){
       Attitude::newData = true;
     }

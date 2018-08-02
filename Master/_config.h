@@ -7,6 +7,7 @@
 //
 // PINS
 //
+
 #define PIN_LED1               12
 #define PIN_LED2               13
 
@@ -20,43 +21,18 @@
 #define PIN_M2_IN1             4	
 #define PIN_M2_IN2             10
 
-/*
-Liner don't work
-#define PIN_M1_EN              6
-#define PIN_M1_IN1             10
-#define PIN_M1_IN2             4
-
-#define PIN_M2_EN              5	
-#define PIN_M2_IN1             A0	
-#define PIN_M2_IN2             A1
-
-Theta dont work
-#define PIN_M1_EN              6
-#define PIN_M1_IN1             4
-#define PIN_M1_IN2             10
-
-#define PIN_M2_EN              5	
-#define PIN_M2_IN1             A1	
-#define PIN_M2_IN2             A0
-*/
-
 #define PIN_BTN                0
 
 #define PIN_VBAT               A3
 
 #define PIN_RADIO1_CE          8
 #define PIN_RADIO1_CSN         9
-#define PIN_RADIO1_INTERRUPT   0
-
-// #define PIN_RADIO2_CE          10
-// #define PIN_RADIO2_CSN         11
 
 //
 // Project
 //
 #define PROJECT_NAME           "SlaveFirmware"
 #define PROJECT_VERSION        "v2.1"
-
 
 //
 // Serial DEBUG
@@ -83,10 +59,15 @@ Theta dont work
 #define VBAT_USB               5.10
 
 //
+// Communication Constants 
+//
+#define ODOMETRY_PACKET_SIZE    9
+
+//
 // RADIO Configs (NRF24L01)
 //
 #define RADIO_MASTER_ADDRESS   1
-#define RADIO_TIMEOUT_TO_IDDLE 2000
+#define RADIO_TIMEOUT_TO_IDDLE 1000
 #define RADIO_PACKET_SIZE      32
 #define ROBOT_PACKET_SIZE      6
 #define FLOAT_MULTIPLIER       10.0
@@ -95,5 +76,6 @@ Theta dont work
 // EEPROM Addresses
 //
 #define EEPROM_ROBOT_ID        0x10
+#define EEPROM_CHANNEL         0x20
 
 #endif

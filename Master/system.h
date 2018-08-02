@@ -9,7 +9,7 @@ extern ThreadController controller;
 class System{
 public:
   static void init();
-
+  static float dt;
 };
 
 #endif

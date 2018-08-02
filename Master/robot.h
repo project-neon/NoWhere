@@ -22,7 +22,8 @@ public:
 
   static int getRobotID();
   static void setRobotID(int id);
-
+  static int getChannel();
+  static void setChannel(int channel);
 
   // ====================================
   //         PRIMITIVE STATES
@@ -82,6 +83,8 @@ public:
   static int16_t dx;
   static int16_t dy;
   static float theta;
+  static float angular;
+  static float linear;
   static bool onFloor;
   static bool inclinated;
 

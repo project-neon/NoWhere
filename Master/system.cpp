@@ -3,6 +3,7 @@
 
 #include "robot.h"
 #include "system.h"
+#include "attitude.h"
 
 ThreadController controller;
 
@@ -13,20 +14,28 @@ void threadBatteryChecker_run();
 Thread threadBatteryChecker(threadBatteryChecker_run, 3000);
 
 //
-// WatchDog and LED thread
+// WatchDog LED thread
 //
 void threadWatchdog_run();
 Thread threadWatchdog(threadWatchdog_run, 500);
 
+//
+//  Serial Debug thread
+//
+void threadDebug_run();
+Thread threadDebug(threadDebug_run, 20);
+
+float System::dt = 0;
+
+// ====================================
+//            INITIALIZATION
+// ====================================
 
 void System::init(){
 
   // Initialize Serial and Wait to be ok
-/*
   Serial.begin(SERIAL_SPEED);
-  while(!Serial);
-  delay(50);
-*/
+  
   LOG("\n===== "); LOG(PROJECT_NAME); LOG(" =====\n");
   LOG(PROJECT_VERSION); LOG("\n\n");
 
@@ -35,17 +44,20 @@ void System::init(){
   // Add threads to system
   controller.add(&threadBatteryChecker);
   controller.add(&threadWatchdog);
+  // controller.add(&threadDebug);
 }
 
-/*
-  Checks battery voltage
-*/
+// ====================================
+//          THREAD CALLBACKS
+// ====================================
+
+
+// Checks for low battery and set alarm states accordingly
 void threadBatteryChecker_run(){
   static int alerts = 0;
 
   long analogVal = analogRead(PIN_VBAT);
   Robot::vbat = VBAT_VOLTAGE(analogVal);
-  // LOG("VBAT: "); LOG(Robot::vbat); LOG(" ["); LOG(analogVal); LOG("]\n");
 
   if(Robot::vbat < VBAT_ALARMED && Robot::vbat > VBAT_USB){
     if(++alerts == 3){
@@ -62,9 +74,7 @@ void threadBatteryChecker_run(){
   }
 }
 
-/*
-  Watches role robot and checks for activity. Also, toggles led
-*/
+// Watches robot and checks for activity. Also, toggles led
 void threadWatchdog_run(){
   static bool ledState = false;
   static bool ledStateInvert = false;
@@ -91,6 +101,14 @@ void threadWatchdog_run(){
   digitalWrite(PIN_LED1, ledState);
   digitalWrite(PIN_LED2, ledState ^ ledStateInvert);
 
-  // Set timeout acordingly to Robot's state
-  // threadWatchdog.setInterval(Robot::state == IDDLE ? 250 : 500);
 }
+
+// // Logs through serial some robot variables
+// void threadDebug_run(){
+//   LOG("Lin: ");
+//   LOG(Robot::linear);
+//   LOG("ang: ");
+//   LOG(Robot::angular);
+//   LOG(" runTime: ");
+//   LOG(System::dt);ENDL;
+// }

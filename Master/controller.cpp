@@ -14,33 +14,24 @@
 // Local variables/objects
 //
 
-float errY = 0;
-float errTheta = 0;
-float errsample = 0;
-
+int logs = 0;
+float pwrLeft;
+float pwrRight;
+float errY;
+float errTheta; 
 
 void threadController_run();
 Thread threadController(threadController_run, 0);
-
-void threadCheckInclinationAlarm_run();
-Thread threadCheckInclinationAlarm(threadCheckInclinationAlarm_run, 500);
 
 //
 // PID's
 //
 
 //  PIDs Parameters. 
-
-//PID pidX(0.2f, 2.5f, 0.0f, 100);
-//PID pidY(7.0f*0.66, 0.0f, 0.0f, 0);    
-//PID pidTheta(1.0f*0.66, 0.0f, 0.04f*0.66, 0);
-
-//PID pidX(10.0f, 0.0f, 0.0f, 100);  We don't use it anymore !
 PID pidY(-10.0f, 0.0f, 0.00f, 100);
 PID pidTheta(1.0f, 0.1f, 0.00f, 0);
 
 void resetControl();
-
 
 // ====================================
 //           INITIALIZATION
@@ -48,11 +39,8 @@ void resetControl();
 
 void Controller::init(){
   LOG("Controller::init\n");
-
-  controller.add(&threadCheckInclinationAlarm);
   controller.add(&threadController);
 }
-
 
 // ====================================
 //           CONTROLL TARGETS
@@ -62,12 +50,14 @@ float Controller::targetY = 0;
 float Controller::targetX = 0;
 float Controller::targetTheta = 0;
 
+// Function to set targets
 void Controller::setTarget(float targetX, float targetY, float targetTheta){
   Controller::targetX = targetX;
   Controller::targetY = targetY;
   Controller::targetTheta = targetTheta;
 }
 
+// Function to set Constants
 void Controller::setPIDConstants(float kp, float ki, float kd, float iLimit){
   pidTheta.kp = kp;
   pidTheta.ki = ki;
@@ -75,38 +65,24 @@ void Controller::setPIDConstants(float kp, float ki, float kd, float iLimit){
   pidTheta.iLimit = iLimit;
 }
 
+// Resets the PID and stop motors
+void resetControl(){
+  Motors::stop();
+  pidY.reset();
+  pidTheta.reset();
+  pwrLeft = 0;
+  pwrRight = 0;
+}
 
 // ====================================
 //          THREAD CALLBACKS
 // ====================================
 
-void threadCheckInclinationAlarm_run(){
-  static int alarms = 0;
-
-  // Check Theta Limit (Pitch Roll)
-  if(Robot::state == IDDLE && Robot::alarm == ALARM_TOO_INCLINATED){
-    // Check if stable, and reset flag
-    if(!Robot::inclinated){
-      Robot::setAlarm(NONE);
-      alarms = 0;
-    }
-  }else if(Robot::state == ACTIVE){
-    // Check if is too inclinated
-    if(Robot::inclinated){
-      Robot::setAlarm(ALARM_TOO_INCLINATED);
-    }
-  }
-}
-
-int logs = 0;
-float pwrLeft;
-float pwrRight;
 void threadController_run(){
   static unsigned long lastNow;
   static unsigned long now;
   static float lastRate;
-  static float rateAvgThetha;
-  static float rateThetha;
+  static float rateTheta;
   static float rateSpeed;
   static float dt;
   static bool wasOnFloor = true;
@@ -120,36 +96,40 @@ void threadController_run(){
 
   // Compute dt
   now = micros();
+
+  // Bring dt back to seconds
   dt = (now - lastNow) / 1000000.0;
+  System::dt = dt;
   lastNow = now;
 
   // Skip if dt is too large or too small
-  if(dt > 0.1 || dt <= 0.0){
+  if(dt > 0.03 || dt <= 0.00){
     LOG(" ! Weird dt:");
     LOG(dt);  ENDL;
     return;
   }
 
-  // Compute Degrees/second
-  // angulo = Robot::theta
-  // dt = dt
-  rateThetha = (Robot::theta - lastRate);
-  if (rateThetha > 180.0)
-    rateThetha -= 360.0;
-  else if (rateThetha < -180.0)
-    rateThetha += 360.0;
-  rateThetha = rateThetha / dt;
+  // Compute rate of Theta (degrees/s)
+  rateTheta = (Robot::theta - lastRate);
+  if (rateTheta > 180.0)
+    rateTheta -= 360.0;
+  else if (rateTheta < -180.0)
+    rateTheta += 360.0;
+  rateTheta = rateTheta / dt;
   lastRate = Robot::theta;
 
+  Robot::angular = rateTheta;
+  
   // Rate is absurd? Skip this controll.
-  if(rateThetha < -1000 || rateThetha > 1000){
+  if(rateTheta < -1200 || rateTheta > 1200){
     LOG(" ! theta "); 
     return;
   }
-  // Compute Y Speed rate
+
+  // Compute Y Speed rate for 400 Dots Per Inch and some empirical params ((400 * 2.54)+someting)
   rateSpeed = Robot::dy / dt / 1516.0;
 
-  // rateAvgThetha += (rateThetha - rateAvgThetha) * 0.3;
+  Robot::linear = rateSpeed;
 
   // Check if robot is not touching ground
   if(!Robot::onFloor){
@@ -166,65 +146,40 @@ void threadController_run(){
   }
 
   // Checks if robot is in IDDLE state. Skip if so...
-  if(Robot::state == IDDLE){  // TROQUEI AQUI TEM VOLTAR AO NORMAL !!!!!!!!!!!!
+  if(Robot::state == IDDLE){
      resetControl();
      return;
   }
 
-  // Calculate
-  // float errorTheta = Controller::targetTheta - rateThetha;
+  // Set target for PIDs
   pidTheta.setTarget(Controller::targetTheta);
   pidY.setTarget(Controller::targetY);
 
-  float speedTheta = pidTheta.update(rateThetha, dt);
+  // Calculate PID values
+  float speedTheta = pidTheta.update(rateTheta, dt);
   float speedY = pidY.update(rateSpeed, dt);
 
-  // Final Speed
+  // Final Speed for robot
   float accLeft  = speedY + speedTheta;
   float accRight = speedY - speedTheta;
 
   pwrLeft  = pwrLeft  + accLeft * dt;
   pwrRight = pwrRight + accRight * dt;
 
-  // Limit Pwers
+  // Limit Powers
   pwrLeft  = min(100, max(-100, pwrLeft));
   pwrRight = min(100, max(-100, pwrRight));
 
   Motors::setPower(pwrLeft, pwrRight);
-
+  
   errY = pow(Controller::targetY - rateSpeed, 2);
-  errTheta = pow(Controller::targetTheta - rateThetha, 2);
-  errsample = now;
+  errTheta = pow(Controller::targetTheta - rateTheta, 2);
 
   // Log if debug is enabled
-  /*
   if(Robot::debug){
     LOG("\tdt: "); LOG(dt * 1000);
     LOG("\terrY: "); LOG(errY);
     LOG("\terrT: "); LOG(errTheta);
-    LOG("\r\n");
+    ENDL;
   }
-  */
-  Controller::scanErrors();
-}
-
-// Resets the PID and stop motors
-void resetControl(){
-  Motors::stop();
-  pidY.reset();
-
-  // pidX.reset(); We don't use it anymore !
-
-  pidTheta.reset();
-  pwrLeft = 0;
-  pwrRight = 0;
-}
-  //
-void Controller::scanErrors(){
-    LOG("\ttempo: "); LOG(errsample);
-    LOG("\t ; ");
-    LOG("\terrY: "); LOG(errY);
-    LOG("\t ; ");
-    LOG("\terrT: "); LOG(errTheta);
-    LOG("\r\n");
 }

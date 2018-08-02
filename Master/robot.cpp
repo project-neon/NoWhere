@@ -9,12 +9,27 @@
 #include "motors.h"
 #include "system.h"
 
+// ====================================
+//         ATTITUDE/ORIENTATION
+// ====================================
+
+int16_t Robot::dx = 0;
+int16_t Robot::dy = 0;
+float Robot::theta = 0;
+float Robot::linear = 0;
+float Robot::angular = 0;
+
+bool Robot::onFloor = false;
+bool Robot::inclinated = false;
+bool Robot::debug = false;
+
+unsigned long Robot::lastTimeActive = 0;
+
 void threadBeeper_run();
 Thread threadBeeper(threadBeeper_run, 0);
 
-
 // ====================================
-//           INITIALIZERS
+//            INITIALIZATION
 // ====================================
 void Robot::init(){
 
@@ -31,7 +46,7 @@ void Robot::init(){
   pinMode(PIN_VBAT, INPUT);
 
   // Setup State/Alarms
-  Robot::setState(ACTIVE); //ACTIVE 
+  Robot::setState(IDDLE);
   Robot::setAlarm(NONE);
 
   // Setup Beeper Thread
@@ -59,14 +74,27 @@ void Robot::setRobotID(int id){
   EEPROM.write(EEPROM_ROBOT_ID, id);
 }
 
+int _channel = 0;
+int Robot::getChannel(){
+  if(_channel == 0){
+    // Load from Eeprom if not loaded yet
+    _channel = EEPROM.read(EEPROM_ROBOT_ID);
+  }
+  return _channel;
+}
+void Robot::setChannel(int channel){
+  // Clear cache (Force re-reading)
+  _channel = 0;
+  EEPROM.write(EEPROM_CHANNEL, channel);
+}
+
 
 // ====================================
 //         PRIMITIVE STATES
 // ====================================
-bool Robot::debug = false;
+
 RobotState Robot::state = IDDLE;
 RobotAlarm Robot::alarm = NONE;
-unsigned long Robot::lastTimeActive = 0;
 
 // Sets the robot's state
 void Robot::setState(RobotState _state){
@@ -78,9 +106,9 @@ void Robot::setState(RobotState _state){
     Motors::stop();
 };
 
+// Controls the robot alarm States
 void Robot::setAlarm(RobotAlarm _alarm){
   Robot::alarm = _alarm;
-
   if(_alarm != NONE){
     LOG("Alarm set: "); LOG(_alarm); ENDL;
     threadBeeper.enabled = true;
@@ -89,8 +117,7 @@ void Robot::setAlarm(RobotAlarm _alarm){
   }else{
     LOG("Alarm clear\n");
   }
-};
-
+}
 
 // ====================================
 //       BEEP and Voltage states
@@ -110,7 +137,7 @@ void Robot::setBeep(BeepState state){
   Robot::beepState = state;
   threadBeeper.enabled = true;
 
-  LOG("Beep State: "); LOG(state); ENDL;
+  // LOG("Beep State: "); LOG(state); ENDL;
 }
 
 void Robot::doBeep(int _times, int interval, int _reason){
@@ -120,25 +147,18 @@ void Robot::doBeep(int _times, int interval, int _reason){
   // Make sure Thread will run
   threadBeeper.enabled = true;
 
-  LOG("Beep times: "); LOG(_times); LOG(" Reason: "); LOG(_reason); ENDL;
+  // LOG("Beep times: "); LOG(_times); LOG(" Reason: "); LOG(_reason); ENDL;
 }
 
 void threadBeeper_run(){
   static bool isBeeping = false;
   static bool lastIsBeeping = false;
 
-  // if(Robot::alarm != NONE){
-    // High Priority to alarms
-    // isBeeping = !isBeeping;
-    // threadBeeper.setInterval(isBeeping ? 20 : 80);
-  // }else
   if(Robot::beepTimes > 0){
     // Decrease beeps at each beep
     if(!isBeeping)
       Robot::beepTimes--;
-
     isBeeping = !isBeeping;
-
     threadBeeper.setInterval(isBeeping ? 30 : Robot::beepInterval);
   }else if(Robot::beepState == BEEP_NONE){
     isBeeping = false;
@@ -161,12 +181,3 @@ void threadBeeper_run(){
 }
 
 
-// ====================================
-//         ATTITUDE/ORIENTATION
-// ====================================
-
-int16_t Robot::dx = 0;
-int16_t Robot::dy = 0;
-float Robot::theta = 0;
-bool Robot::onFloor = false;
-bool Robot::inclinated = false;
