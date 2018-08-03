@@ -83,7 +83,7 @@ void configNRF(RF24 &radio){
   }
   // Set retries to zero to always send new information.
   radio.setPALevel(RF24_PA_MAX);
-  radio.setChannel(108);
+  radio.setChannel(Robot::getRobotChannel());
   radio.setRetries(0, 0);
   LOG("Radio::init OK"); ENDL;
 }
@@ -196,36 +196,43 @@ void threadSerial_run(){
   
   if(got == '1'){
     Motors::stop();
+    Controller::enabled = false;
     Robot::setState(ACTIVE);
     Motors::setPower(20, 0);
   }
   else if(got == '2'){
     Motors::stop();
+    Controller::enabled = false;
     Robot::setState(ACTIVE);
     Motors::setPower(-20, 0);
   }
   else if(got == '3'){
     Motors::stop();
+    Controller::enabled = false;
     Robot::setState(ACTIVE);
     Motors::setPower(0, 20);
   }
   else if(got == '4'){
     Motors::stop();
+    Controller::enabled = false;
     Robot::setState(ACTIVE);
     Motors::setPower(0, -20);
   }
   else if(got == '5'){
     Motors::stop();
+    Controller::enabled = false;
     Robot::setState(ACTIVE);
     Motors::setPower(20, 20);
   }
   else if(got == '6'){
     Motors::stop();
+    Controller::enabled = false;
     Robot::setState(ACTIVE);
     Motors::setPower(-20, -20);
   }
   else if(got == '0'){
 
+    Controller::enabled = true;
     Controller::setTarget(0, 0, 0);
     Motors::stop();
 
@@ -244,6 +251,25 @@ void threadSerial_run(){
 
     LOG("ID: "); LOG(Robot::getRobotID()); ENDL;
     LOG("[Send i<char> to set robot's id]");
+  }else if(got == 'c'){
+    String inString = "";
+    delay(1);
+    while(Serial.available() > 0){
+      uint8_t inChar = Serial.read();
+      if (isDigit(inChar)) {
+        // convert the incoming byte to a char and add it to the string:
+        inString += (char)inChar;
+      }
+    }
+    uint8_t newChannel = inString.toInt();
+    if(newChannel <= 126){
+      LOG("Channel set! RESTART to change Radio"); ENDL;
+      Robot::setRobotChannel(newChannel);
+      configNRF(radio);
+    }
+
+    LOG("ID: "); LOG(Robot::getRobotChannel()); ENDL;
+    LOG("[Send c<number> to set robot's channel]");
   }else if(got == '@'){
     Motors::stop();
     LOG(F("===========================")); ENDL;
@@ -289,6 +315,7 @@ void threadSerial_run(){
     LOG("i: View robot ID"); ENDL;
     LOG("s: Scan NRF Frequencies"); ENDL;
     LOG("i<char>: Set robot id"); ENDL;
+    LOG("c<number from 0 to 126>: Set robot's channel"); ENDL;       
     LOG("@: Replicate odometry Serial"); ENDL;
   }
 }

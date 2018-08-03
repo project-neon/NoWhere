@@ -20,10 +20,10 @@ public:
   //   SPECIFIC CONFIGURATIONS (EEPROM)
   // ====================================
 
-  static int getRobotID();
-  static void setRobotID(int id);
-  static int getChannel();
-  static void setChannel(int channel);
+  static uint8_t getRobotID();
+  static void setRobotID(uint8_t id);
+  static uint8_t getRobotChannel();
+  static void setRobotChannel(uint8_t channel);
 
   // ====================================
   //         PRIMITIVE STATES
@@ -68,12 +68,12 @@ public:
   /*
     Beeper flag/setter
   */
-  static int beepTimes;
-  static int beepInterval;
+  static uint8_t beepTimes;
+  static uint8_t beepInterval;
   static BeepState beepState;
 
   static void setBeep(BeepState state);
-  static void doBeep(int _times, int interval, int _reason);
+  static void doBeep(uint8_t _times, uint8_t interval, uint8_t _reason);
 
 
   // ====================================

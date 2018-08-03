@@ -20,6 +20,8 @@ float pwrRight;
 float errY;
 float errTheta; 
 
+bool Controller::enabled = true;
+
 void threadController_run();
 Thread threadController(threadController_run, 0);
 
@@ -90,6 +92,12 @@ void threadController_run(){
   // Checks if new data is available for processing
   if(!Attitude::newData)
     return;
+
+   // Checks if new data is available for processing
+  if(!Controller::enabled){
+    threadController.enabled = false;
+    return;
+  }
 
   // Lower Flag
   Attitude::newData = false;

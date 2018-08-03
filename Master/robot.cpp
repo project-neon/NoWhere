@@ -25,6 +25,9 @@ bool Robot::debug = false;
 
 unsigned long Robot::lastTimeActive = 0;
 
+uint8_t _id = 0;
+uint8_t _channel = 0;
+
 void threadBeeper_run();
 Thread threadBeeper(threadBeeper_run, 0);
 
@@ -59,8 +62,7 @@ void Robot::init(){
 //   SPECIFIC CONFIGURATIONS (EEPROM)
 // ====================================
 
-int _id = 0;
-int Robot::getRobotID(){
+uint8_t Robot::getRobotID(){
   if(_id == 0){
     // Load from Eeprom if not loaded yet
     _id = EEPROM.read(EEPROM_ROBOT_ID);
@@ -68,21 +70,21 @@ int Robot::getRobotID(){
   return _id;
 }
 
-void Robot::setRobotID(int id){
+void Robot::setRobotID(uint8_t id){
   // Clear cache (Force re-reading)
   _id = 0;
   EEPROM.write(EEPROM_ROBOT_ID, id);
 }
 
-int _channel = 0;
-int Robot::getChannel(){
+
+uint8_t Robot::getRobotChannel(){
   if(_channel == 0){
     // Load from Eeprom if not loaded yet
-    _channel = EEPROM.read(EEPROM_ROBOT_ID);
+    _channel = EEPROM.read(EEPROM_CHANNEL);
   }
   return _channel;
 }
-void Robot::setChannel(int channel){
+void Robot::setRobotChannel(uint8_t channel){
   // Clear cache (Force re-reading)
   _channel = 0;
   EEPROM.write(EEPROM_CHANNEL, channel);
@@ -125,8 +127,8 @@ void Robot::setAlarm(RobotAlarm _alarm){
 
 float Robot::vbat = 0;
 
-int Robot::beepTimes = 2;
-int Robot::beepInterval = 50;
+uint8_t Robot::beepTimes = 2;
+uint8_t Robot::beepInterval = 50;
 BeepState Robot::beepState = BEEP_NONE;
 
 void Robot::setBeep(BeepState state){
@@ -140,7 +142,7 @@ void Robot::setBeep(BeepState state){
   // LOG("Beep State: "); LOG(state); ENDL;
 }
 
-void Robot::doBeep(int _times, int interval, int _reason){
+void Robot::doBeep(uint8_t _times, uint8_t interval, uint8_t _reason){
   Robot::beepTimes = _times;
   Robot::beepInterval = interval;
 

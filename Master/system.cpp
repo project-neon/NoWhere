@@ -23,7 +23,7 @@ Thread threadWatchdog(threadWatchdog_run, 500);
 //  Serial Debug thread
 //
 void threadDebug_run();
-Thread threadDebug(threadDebug_run, 20);
+Thread threadDebug(threadDebug_run, 1000);
 
 float System::dt = 0;
 
@@ -44,7 +44,7 @@ void System::init(){
   // Add threads to system
   controller.add(&threadBatteryChecker);
   controller.add(&threadWatchdog);
-  // controller.add(&threadDebug);
+  controller.add(&threadDebug);
 }
 
 // ====================================
@@ -79,13 +79,15 @@ void threadWatchdog_run(){
   static bool ledState = false;
   static bool ledStateInvert = false;
 
+  if(Robot::Debug){
+    threadDebug.enabled = true;
+  }
+  
   // Toggle state
   ledState = !ledState;
   ledStateInvert = false;
 
   // Check for ALARM
-  // if(Robot::alarm != NONE)
-    // ledState = true;
   if(Robot::alarm == NONE && Robot::state == IDDLE){
     // State is iddle without error
     threadWatchdog.setInterval(ledState ? 250 : 750);
@@ -103,12 +105,15 @@ void threadWatchdog_run(){
 
 }
 
-// // Logs through serial some robot variables
-// void threadDebug_run(){
-//   LOG("Lin: ");
-//   LOG(Robot::linear);
-//   LOG("ang: ");
-//   LOG(Robot::angular);
-//   LOG(" runTime: ");
-//   LOG(System::dt);ENDL;
-// }
+// Logs through serial some robot variables
+void threadDebug_run(){
+  if(!Robot::Debug){
+    threadDebug.enabled = false;
+  }
+  LOG("Lin: ");
+  LOG(Robot::linear);
+  LOG("ang: ");
+  LOG(Robot::angular);
+  LOG(" runTime: ");
+  LOG(System::dt);ENDL;
+}
