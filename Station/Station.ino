@@ -95,7 +95,7 @@ void configNRF(RF24 &radio){
     }
   }
   radio.setPALevel(RF24_PA_MAX);
-  radio.setChannel(108);
+  radio.setChannel(88);
   radio.setRetries(0, 1);
 
   #ifdef DEBUG

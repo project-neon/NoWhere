@@ -19,13 +19,6 @@ Thread threadBatteryChecker(threadBatteryChecker_run, 3000);
 void threadWatchdog_run();
 Thread threadWatchdog(threadWatchdog_run, 500);
 
-//
-//  Serial Debug thread
-//
-void threadDebug_run();
-Thread threadDebug(threadDebug_run, 1000);
-
-float System::dt = 0;
 
 // ====================================
 //            INITIALIZATION
@@ -35,6 +28,7 @@ void System::init(){
 
   // Initialize Serial and Wait to be ok
   Serial.begin(SERIAL_SPEED);
+  delay(10000);
   
   LOG("\n===== "); LOG(PROJECT_NAME); LOG(" =====\n");
   LOG(PROJECT_VERSION); LOG("\n\n");
@@ -44,7 +38,6 @@ void System::init(){
   // Add threads to system
   controller.add(&threadBatteryChecker);
   controller.add(&threadWatchdog);
-  controller.add(&threadDebug);
 }
 
 // ====================================
@@ -78,10 +71,6 @@ void threadBatteryChecker_run(){
 void threadWatchdog_run(){
   static bool ledState = false;
   static bool ledStateInvert = false;
-
-  if(Robot::Debug){
-    threadDebug.enabled = true;
-  }
   
   // Toggle state
   ledState = !ledState;
@@ -103,17 +92,4 @@ void threadWatchdog_run(){
   digitalWrite(PIN_LED1, ledState);
   digitalWrite(PIN_LED2, ledState ^ ledStateInvert);
 
-}
-
-// Logs through serial some robot variables
-void threadDebug_run(){
-  if(!Robot::Debug){
-    threadDebug.enabled = false;
-  }
-  LOG("Lin: ");
-  LOG(Robot::linear);
-  LOG("ang: ");
-  LOG(Robot::angular);
-  LOG(" runTime: ");
-  LOG(System::dt);ENDL;
 }

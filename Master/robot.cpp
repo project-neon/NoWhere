@@ -149,7 +149,7 @@ void Robot::doBeep(uint8_t _times, uint8_t interval, uint8_t _reason){
   // Make sure Thread will run
   threadBeeper.enabled = true;
 
-  // LOG("Beep times: "); LOG(_times); LOG(" Reason: "); LOG(_reason); ENDL;
+  // LOG("Beep times: "); LOG(_times); ENDL;
 }
 
 void threadBeeper_run(){

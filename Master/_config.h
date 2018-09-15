@@ -31,7 +31,7 @@
 //
 // Project
 //
-#define PROJECT_NAME           "SlaveFirmware"
+#define PROJECT_NAME           "MasterFirmware"
 #define PROJECT_VERSION        "v2.1"
 
 //

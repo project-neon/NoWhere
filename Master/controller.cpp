@@ -107,7 +107,6 @@ void threadController_run(){
 
   // Bring dt back to seconds
   dt = (now - lastNow) / 1000000.0;
-  System::dt = dt;
   lastNow = now;
 
   // Skip if dt is too large or too small
@@ -186,6 +185,8 @@ void threadController_run(){
   // Log if debug is enabled
   if(Robot::debug){
     LOG("\tdt: "); LOG(dt * 1000);
+    LOG("\tSpeed: ");LOG(rateSpeed);
+    LOG("\tTheta: ");LOG(rateTheta);
     LOG("\terrY: "); LOG(errY);
     LOG("\terrT: "); LOG(errTheta);
     ENDL;
