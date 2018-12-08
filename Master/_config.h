@@ -1,6 +1,3 @@
-#include <stdint.h>
-#include <math.h>
-
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -66,6 +63,7 @@
 //
 // RADIO Configs (NRF24L01)
 //
+
 #define RADIO_MASTER_ADDRESS   1
 #define RADIO_TIMEOUT_TO_IDDLE 1000
 #define RADIO_PACKET_SIZE      32

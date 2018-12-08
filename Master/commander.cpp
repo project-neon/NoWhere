@@ -15,6 +15,7 @@
 //
 // NRF24L01 Config
 //
+
 RF24 radio(PIN_RADIO1_CE, PIN_RADIO1_CSN);
 
 void configNRF(RF24 &radio);
@@ -23,13 +24,13 @@ void configNRF(RF24 &radio);
 uint8_t radioBufferIn[RADIO_PACKET_SIZE];
 uint8_t robotQuantity = 0;
 uint8_t robotId = 0;
-int16_t robotYSpeed = 0;
-int16_t robotTSpeed = 0;
+float robotYSpeed = 0;
+float robotTSpeed = 0;
 uint8_t myRobotId = 0;
 
 // Checks for communication and sets robot's state to IDDLE/ACTIVE
 void threadIddleDetection_run();
-Thread threadIddleDetection(threadIddleDetection_run, 500);
+Thread threadIddleDetection(threadIddleDetection_run, 100);
 
 // Serial communication (DEBUG)
 void threadSerial_run();
@@ -52,7 +53,14 @@ void Commander::init(){
   delay(10);
 
   // Initialize Radio
-  radio.begin();
+  if(!radio.begin()){
+    while(1){
+      digitalWrite(12, !digitalRead(12));  // statement
+      delay(100);
+    }
+  }else{
+    LOG("Radio Begin OK");ENDL;
+  }
   delay(10);
 
   // Configure Radio
@@ -89,7 +97,7 @@ void configNRF(RF24 &radio){
 }
 
 // ====================================
-// Does a sweep scan on the radio Freq.
+//    Code to scan 2.4GHz Enviroment.
 // ====================================
 
 const int num_reps = 100;
@@ -170,7 +178,7 @@ void threadIddleDetection_run(){
   // Set state to iddle after radio timeout
   if(millis() - Robot::lastTimeActive > RADIO_TIMEOUT_TO_IDDLE){
     Robot::setState(IDDLE);
-    Robot::doBeep(2, 50, 3);
+    Robot::doBeep(2, 50);
   }
 }
 
@@ -181,18 +189,14 @@ void threadIddleDetection_run(){
 void threadSerial_run(){
 
   // Wait for variables to be available
-  if(!Serial.available())
+  if(!Serial.available()){
     return;
-
+  }
+  
   // Reads from serial buffer
   char got = Serial.read();
 
   LOG("Cmd:"); LOG(got); ENDL;
-
-  /* There is a bug related with this test motor command. In the first boot of robot,
-  motor don't work well, I don't know why, but i figure out a trick to solve this problem,
-  1º- Open the monitor serial ant type "@" then "d" and finilly ":q", after that motor work well.
-  */
   
   if(got == '1'){
     Motors::stop();
@@ -241,7 +245,7 @@ void threadSerial_run(){
 
   }else if(got == 'i'){
     delay(1);
-    if(Serial.available()){
+    if(Serial.available() > 0){
       char newId = Serial.read();
       if(newId != '\r' && newId != '\n'){
         LOG("Id set! RESTART to change Radio"); ENDL;
@@ -252,24 +256,23 @@ void threadSerial_run(){
     LOG("ID: "); LOG(Robot::getRobotID()); ENDL;
     LOG("[Send i<char> to set robot's id]");
   }else if(got == 'c'){
-    String inString = "";
-    delay(1);
-    while(Serial.available() > 0){
-      uint8_t inChar = Serial.read();
-      if (isDigit(inChar)) {
-        // convert the incoming byte to a char and add it to the string:
-        inString += (char)inChar;
+    String num = "";
+    
+    if(Serial.available() > 0){
+      while(Serial.available() > 0){
+        char in = Serial.read();
+        num+=in;
       }
     }
-    uint8_t newChannel = inString.toInt();
-    if(newChannel <= 126){
-      LOG("Channel set! RESTART to change Radio"); ENDL;
-      Robot::setRobotChannel(newChannel);
-      configNRF(radio);
-    }
-
-    LOG("ID: "); LOG(Robot::getRobotChannel()); ENDL;
-    LOG("[Send c<number> to set robot's channel]");
+      uint8_t newChannel = num.toInt();
+      if(newChannel > 0 && newChannel <= 126){
+        Robot::setRobotChannel(newChannel);
+        configNRF(radio);
+        LOG("Channel set! RESTART to change Radio to: "); LOG(newChannel); ENDL;
+      }else{
+        LOG("ID: "); LOG(Robot::getRobotChannel()); ENDL;
+        LOG("[Send c<number between 0 and 126> to set robot's channel]");
+      }
   }else if(got == '@'){
     Motors::stop();
     LOG(F("===========================")); ENDL;
@@ -315,7 +318,7 @@ void threadSerial_run(){
     LOG("i: View robot ID"); ENDL;
     LOG("s: Scan NRF Frequencies"); ENDL;
     LOG("i<char>: Set robot id"); ENDL;
-    LOG("c<number from 0 to 126>: Set robot's channel"); ENDL;       
+    LOG("c<number from 0 to 126>: Set robot's channel"); ENDL;  
     LOG("@: Replicate odometry Serial"); ENDL;
   }
 }
@@ -374,7 +377,7 @@ void threadNRF_run(){
       if(Robot::alarm == NONE){
         if(Robot::state == IDDLE && activate){
           Robot::setState(ACTIVE);
-          Robot::doBeep(2, 100, 4);
+          Robot::doBeep(2, 100);
         }
         // Save timestamp of message
         Robot::lastTimeActive = millis();

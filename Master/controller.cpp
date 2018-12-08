@@ -23,15 +23,15 @@ float errTheta;
 bool Controller::enabled = true;
 
 void threadController_run();
-Thread threadController(threadController_run, 0);
+Thread threadController(threadController_run, 2);
 
 //
 // PID's
 //
 
 //  PIDs Parameters. 
-PID pidY(-10.0f, 0.0f, 0.00f, 100);
-PID pidTheta(1.0f, 0.1f, 0.00f, 0);
+PID pidY(5.0f, 0.0f, 0.02f, 0);
+PID pidTheta(1.0f, 0.0f, 0.01f, 0);
 
 void resetControl();
 
@@ -81,19 +81,21 @@ void resetControl(){
 // ====================================
 
 void threadController_run(){
+
   static unsigned long lastNow;
   static unsigned long now;
-  static float lastRate;
-  static float rateTheta;
-  static float rateSpeed;
-  static float dt;
+  static float lastTheta = 0;
+  static float rateTheta = 0;
+  static float rateSpeed = 0;
+  static float dt = 0;
   static bool wasOnFloor = true;
 
   // Checks if new data is available for processing
-  if(!Attitude::newData)
+  if(!Attitude::newData){
     return;
-
-   // Checks if new data is available for processing
+  }
+    
+  // Checks if new data is available for processing
   if(!Controller::enabled){
     threadController.enabled = false;
     return;
@@ -106,35 +108,39 @@ void threadController_run(){
   now = micros();
 
   // Bring dt back to seconds
-  dt = (now - lastNow) / 1000000.0;
+  dt = (float)(now - lastNow) / 1000000.0f;
   lastNow = now;
 
   // Skip if dt is too large or too small
-  if(dt > 0.03 || dt <= 0.00){
-    LOG(" ! Weird dt:");
-    LOG(dt);  ENDL;
+  if(dt > 0.1 || dt <= 0.00){
+    LOG(" ! Weird dt:");LOG(dt);  ENDL;
     return;
   }
 
+
   // Compute rate of Theta (degrees/s)
-  rateTheta = (Robot::theta - lastRate);
-  if (rateTheta > 180.0)
-    rateTheta -= 360.0;
-  else if (rateTheta < -180.0)
-    rateTheta += 360.0;
+  rateTheta = (Robot::theta - lastTheta);
+  
+  if (rateTheta > 180.0f)
+    rateTheta -= 360.0f;
+  else if (rateTheta < -180.0f)
+    rateTheta += 360.0f;
+
   rateTheta = rateTheta / dt;
-  lastRate = Robot::theta;
+
+  lastTheta = Robot::theta;
 
   Robot::angular = rateTheta;
+
   
   // Rate is absurd? Skip this controll.
   if(rateTheta < -1200 || rateTheta > 1200){
-    LOG(" ! theta "); 
+    LOG(" ! theta: "); LOG(dt); ENDL;
     return;
   }
 
   // Compute Y Speed rate for 400 Dots Per Inch and some empirical params ((400 * 2.54)+someting)
-  rateSpeed = Robot::dy / dt / 1516.0;
+  rateSpeed = Robot::dy / dt / 1516.0f;
 
   Robot::linear = rateSpeed;
 
@@ -142,13 +148,13 @@ void threadController_run(){
   if(!Robot::onFloor){
     resetControl();
     if(wasOnFloor)
-      Robot::doBeep(1, 80, 0);
+      Robot::doBeep(1, 80);
 
       wasOnFloor = false;
 
     return;
   }else if(!wasOnFloor){
-    Robot::doBeep(Robot::getRobotID(), 80, 1);
+    Robot::doBeep(Robot::getRobotID(), 80);
     wasOnFloor = true;
   }
 
@@ -182,13 +188,4 @@ void threadController_run(){
   errY = pow(Controller::targetY - rateSpeed, 2);
   errTheta = pow(Controller::targetTheta - rateTheta, 2);
 
-  // Log if debug is enabled
-  if(Robot::debug){
-    LOG("\tdt: "); LOG(dt * 1000);
-    LOG("\tSpeed: ");LOG(rateSpeed);
-    LOG("\tTheta: ");LOG(rateTheta);
-    LOG("\terrY: "); LOG(errY);
-    LOG("\terrT: "); LOG(errTheta);
-    ENDL;
-  }
 }

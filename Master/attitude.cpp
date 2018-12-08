@@ -45,7 +45,7 @@ void threadOdometry_run(){
   while(Serial1.available()){
 
     // Move bytes together
-    memmove(buffer + 0, buffer + 1, ODOMETRY_PACKET_SIZE - 1);
+    memmove(buffer, buffer + 1, ODOMETRY_PACKET_SIZE - 1);
 
     // Put at the end
     buffer[ODOMETRY_PACKET_SIZE - 1] = Serial1.read();

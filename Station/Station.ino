@@ -51,6 +51,7 @@
 // Radio Harware Pins
 #define PIN_RADIO_CE       7
 #define PIN_RADIO_CSN      6
+
 #define PIN_LED             13
 
 // Transmission Stuff
@@ -78,7 +79,7 @@ RF24 radio(PIN_RADIO_CE, PIN_RADIO_CSN);
 //Data Holders
 char serialDataIn[64];
 
-// Robot Addresses
+// Robot addresses.
 byte addresses[][6] = {"1Node","2Node"};
 
 // Configures Speed/Channel/... in Radio
@@ -108,7 +109,6 @@ void configNRF(RF24 &radio){
     LOG(radio.getDataRate()); ENDL;
     LOG("Radio CRC Lenght: ");
     LOG(radio.getCRCLength()); ENDL;
-
   #endif
 }
 
