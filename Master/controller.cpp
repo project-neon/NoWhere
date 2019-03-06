@@ -33,7 +33,7 @@ Thread threadController(threadController_run, 2);
 
 //  PIDs Parameters. 
 PID pidY(6.5f, 0.0f, 0.02f, 0);
-PID pidTheta(1.0f, 0.0f, 0.01f, 0);
+PID pidTheta(0.5f, 0.005f, 0.003f, 5000);
 
 void resetControl();
 
