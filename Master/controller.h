@@ -23,6 +23,8 @@ public:
   static float targetX;
   static float targetY;
   static float targetTheta;
+  static float errY;
+  static float errTheta;
   
   static bool enabled;
   static void scanErrors();

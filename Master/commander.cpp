@@ -177,8 +177,8 @@ void threadIddleDetection_run(){
 
   // Set state to iddle after radio timeout
   if(millis() - Robot::lastTimeActive > RADIO_TIMEOUT_TO_IDDLE){
-    Robot::setState(IDDLE);
-    Robot::doBeep(2, 50);
+    Robot::setState(ACTIVE);
+    //Robot::doBeep(2, 50);
   }
 }
 
@@ -241,6 +241,8 @@ void threadSerial_run(){
     Motors::stop();
 
   }else if(got == 'b'){
+    float bat = analogRead(A3);
+    LOG("Raw: "); LOG(bat); ENDL;
     LOG("Battery: "); LOG(Robot::vbat); ENDL;
 
   }else if(got == 'i'){

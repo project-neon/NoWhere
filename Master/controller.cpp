@@ -17,8 +17,10 @@
 int logs = 0;
 float pwrLeft;
 float pwrRight;
-float errY;
-float errTheta; 
+//float errY;
+//float errTheta;
+float Controller::errY;
+float Controller::errTheta; 
 
 bool Controller::enabled = true;
 
@@ -30,7 +32,7 @@ Thread threadController(threadController_run, 2);
 //
 
 //  PIDs Parameters. 
-PID pidY(5.0f, 0.0f, 0.02f, 0);
+PID pidY(6.5f, 0.0f, 0.02f, 0);
 PID pidTheta(1.0f, 0.0f, 0.01f, 0);
 
 void resetControl();
@@ -185,7 +187,7 @@ void threadController_run(){
 
   Motors::setPower(pwrLeft, pwrRight);
   
-  errY = pow(Controller::targetY - rateSpeed, 2);
-  errTheta = pow(Controller::targetTheta - rateTheta, 2);
+  Controller::errY = pow(Controller::targetY - rateSpeed, 2);
+  Controller::errTheta = pow(Controller::targetTheta - rateTheta, 2);
 
 }

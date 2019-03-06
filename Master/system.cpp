@@ -28,6 +28,7 @@ void System::init(){
 
   // Initialize Serial and Wait to be ok
   Serial.begin(SERIAL_SPEED);
+  //while(!Serial);
   delay(2000);
   
   LOG("\n===== "); LOG(PROJECT_NAME); LOG(" =====\n");
