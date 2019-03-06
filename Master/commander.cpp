@@ -177,8 +177,8 @@ void threadIddleDetection_run(){
 
   // Set state to iddle after radio timeout
   if(millis() - Robot::lastTimeActive > RADIO_TIMEOUT_TO_IDDLE){
-    Robot::setState(ACTIVE);
-    //Robot::doBeep(2, 50);
+    Robot::setState(IDDLE);
+    Robot::doBeep(2, 50);
   }
 }
 
