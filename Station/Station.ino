@@ -168,6 +168,7 @@ void loop(){
     
     in = Serial.read();
 
+
     // Do not append if packet size is greater than 64
     if(serialDataPos < 64)
       serialDataIn[serialDataPos] = in;
@@ -221,20 +222,34 @@ void handleMessage(){
   message = String(serialDataIn);
 
   // Check start token
+  bool PIDmode = false;
+  bool ERRORmode = false;
+
   if(serialDataIn[0] != ':'){
     LOG("nok message start token not found"); LOG(serialDataIn[0], HEX); ENDL;
     return;
   }
   // Parse Second item
+
+  if(serialDataIn[1] == 'y' || serialDataIn[1] == 't'){
+    PIDmode = true;
+  }
+
+  if(serialDataIn[1] == 'e'){
+    ERRORmode = !ERRORmode;
+  }
+
+  // Configure number of robots
   if(serialDataIn[1] == ':' && serialDataIn[2] == 's'){
     EEPROM.write(ROBOT_QUANTITY_ADDRESS,int(serialDataIn[3])-'0');
-    Serial.print("number of robots set to: ");
-    Serial.println(int(serialDataIn[3])-'0');
-    Serial.println("!!!!!! Reset so changes take effect !!!!!!");
+    LOG("number of robots set to: ");
+    LOG(int(serialDataIn[3])-'0');
+    ENDL;
+    LOG("!!!!!! Reset so changes take effect !!!!!!");
+    ENDL;
     return;
   }
 
-  
   for(int i=0; i < robotQuantity; i++){
     startIndex = message.indexOf(':', startIndex);
     endIndex = message.indexOf(':', startIndex + SEARCH_OFFSET);
@@ -246,61 +261,154 @@ void handleMessage(){
     int _endIndex = 0;
 
     //////////////////////// Parse Robot ID
+    
+    //PID CONFIGURATION
 
-    _startIndex = startIndex + 1;
-    _endIndex = message.indexOf(';', _startIndex);
-    if(_endIndex < 0){
-      LOG("nok id not found\n");
-      return;
+    if(PIDmode == true){
+
+      _startIndex = startIndex + 1;
+      _endIndex = message.indexOf(';', _startIndex);
+      if(_endIndex < 0){
+        LOG("nok op\n");
+        return;
+      }
+      tmp = message.substring(_startIndex, _endIndex);
+      uint16_t op = tmp.toInt();
+
+      _startIndex = startIndex + 1;
+      _endIndex = message.indexOf(';', _startIndex);
+      if(_endIndex < 0){
+        LOG("nok kp\n");
+        return;
+      }
+      tmp = message.substring(_startIndex, _endIndex);
+      tmpFloat = tmp.toFloat();
+      uint16_t kp = tmpFloat;
+
+      ///////////////////////// Read Target state
+
+      _startIndex = _endIndex + 1;
+      _endIndex = message.indexOf(';', _startIndex);
+      if(_endIndex < 0){
+        LOG("nok ki\n");
+        return;
+      }
+      tmp = message.substring(_startIndex, _endIndex);
+      tmpFloat = tmp.toFloat();
+      uint16_t ki = tmpFloat;
+
+      ///////////////////////// Read target Linear(Y) Speed
+      _startIndex = _endIndex + 1;
+      _endIndex = message.indexOf(';', _startIndex);
+      if(_endIndex < 0){
+       LOG("nok kd\n"); 
+       return;
+      }
+      tmp = message.substring(_startIndex, _endIndex);
+      tmpFloat = tmp.toFloat();
+      int16_t kd = tmpFloat;
+
+      ///////////////////////// Read target Theta Speed
+      _startIndex = _endIndex + 1;
+      _endIndex = message.indexOf(':', _startIndex);
+      if(endIndex < 0){
+        LOG("nok limit\n");
+        return;
+      }
+      tmp = message.substring(_startIndex, _endIndex);
+      int16_t limit = tmp.toInt();
+
+      // Parameter type <t>heta or <y>
+
+      radioDataOut[0+(i*ROBOT_PACKET_SIZE)] = op;
+
+      // KP
+      radioDataOut[1+(i*ROBOT_PACKET_SIZE)] = kp & 0xff;
+      radioDataOut[2+(i*ROBOT_PACKET_SIZE)] = (kp >> 8) & 0xff;
+
+      // KI
+      radioDataOut[3+(i*ROBOT_PACKET_SIZE)] = ki & 0xff;
+      radioDataOut[4+(i*ROBOT_PACKET_SIZE)] = (ki >> 8) & 0xff;
+      
+      // KD
+      radioDataOut[5+(i*ROBOT_PACKET_SIZE)] = kd & 0xff;
+      radioDataOut[6+(i*ROBOT_PACKET_SIZE)] = (kd >> 8) & 0xff;
+
+      // LIMIT
+      radioDataOut[7+(i*ROBOT_PACKET_SIZE)] = limit & 0xff;
+      radioDataOut[8+(i*ROBOT_PACKET_SIZE)] = (limit >> 8) & 0xff;
+
+      startIndex = endIndex; // Reset startIndex for next robot message
+      
+      LOG("OP");LOG("\t");LOG(op);ENDL;
+      LOG("KP");LOG("\t");LOG(kp);ENDL;
+      LOG("KI");LOG("\t");LOG(ki);ENDL;
+      LOG("KD");LOG("\t");LOG(kd);ENDL;
+      LOG("Limit");LOG("\t");LOG(limit);ENDL;
+      LOG("Sending PID ...");ENDL;
+      PIDmode = false;
     }
-    tmp = message.substring(_startIndex, _endIndex);
-    uint8_t robotId = tmp.toInt();
-    #ifdef DEBUG
-      LOG("~robotId: "); LOG(robotId); ENDL;
-    #endif
-
-    ///////////////////////// Read Target state
-
-    _startIndex = _endIndex + 1;
-    _endIndex = message.indexOf(';', _startIndex);
-    if(_endIndex < 0){
-      LOG("nok state not found\n");
-      return;
+    else if(ERRORmode == true){
+    
     }
-    tmp = message.substring(_startIndex, _endIndex);
-    uint8_t robotState = tmp.toInt();
-    #ifdef DEBUG
-      LOG("~robotState: "); LOG(robotState); ENDL;
-    #endif
 
-    ///////////////////////// Read target Linear(Y) Speed
-    _startIndex = _endIndex + 1;
-    _endIndex = message.indexOf(';', _startIndex);
-    if(_endIndex < 0){
-     LOG("nok ySpeed \n"); 
-     return;
-    }
-    tmp = message.substring(_startIndex, _endIndex);
-    tmpFloat = tmp.toFloat();
-    int16_t robotTargetY = tmpFloat * FLOAT_MULTIPLIER;
-    #ifdef DEBUG
-      LOG("~robotTargetY: "); LOG(robotTargetY); ENDL;
-    #endif
+    else{
 
-    ///////////////////////// Read target Theta Speed
-    _startIndex = _endIndex + 1;
-    _endIndex = message.indexOf(':', _startIndex);
-    if(endIndex < 0){
-      LOG("nok thetaSpeed\n");
-      return;
-    }
-    tmp = message.substring(_startIndex, _endIndex);
-    tmpFloat = tmp.toFloat();
-    int16_t robotTargetT = tmpFloat * FLOAT_MULTIPLIER;
-    #ifdef DEBUG
-      LOG("~targetTheta: "); LOG(robotTargetT); ENDL;
-    #endif
+      _startIndex = startIndex + 1;
+      _endIndex = message.indexOf(';', _startIndex);
+      if(_endIndex < 0){
+        LOG("nok id not found\n");
+        return;
+      }
+      tmp = message.substring(_startIndex, _endIndex);
+      uint8_t robotId = tmp.toInt();
+      #ifdef DEBUG
+        LOG("~robotId: "); LOG(robotId); ENDL;
+      #endif
 
+      ///////////////////////// Read Target state
+
+      _startIndex = _endIndex + 1;
+      _endIndex = message.indexOf(';', _startIndex);
+      if(_endIndex < 0){
+        LOG("nok state not found\n");
+        return;
+      }
+      tmp = message.substring(_startIndex, _endIndex);
+      uint8_t robotState = tmp.toInt();
+      #ifdef DEBUG
+        LOG("~robotState: "); LOG(robotState); ENDL;
+      #endif
+
+      ///////////////////////// Read target Linear(Y) Speed
+      _startIndex = _endIndex + 1;
+      _endIndex = message.indexOf(';', _startIndex);
+      if(_endIndex < 0){
+       LOG("nok ySpeed \n"); 
+       return;
+      }
+      tmp = message.substring(_startIndex, _endIndex);
+      
+      tmpFloat = tmp.toFloat();
+      int16_t robotTargetY = tmpFloat * FLOAT_MULTIPLIER;
+      #ifdef DEBUG
+        LOG("~robotTargetY: "); LOG(robotTargetY); ENDL;
+      #endif
+
+      ///////////////////////// Read target Theta Speed
+      _startIndex = _endIndex + 1;
+      _endIndex = message.indexOf(':', _startIndex);
+      if(endIndex < 0){
+        LOG("nok thetaSpeed\n");
+        return;
+      }
+      tmp = message.substring(_startIndex, _endIndex);
+      tmpFloat = tmp.toFloat();
+      int16_t robotTargetT = tmpFloat * FLOAT_MULTIPLIER;
+      #ifdef DEBUG
+        LOG("~targetTheta: "); LOG(robotTargetT); ENDL;
+      #endif
+    
     // Number of Robots
 
     radioDataOut[0] = robotQuantity;
@@ -320,7 +428,9 @@ void handleMessage(){
     radioDataOut[6+(i*ROBOT_PACKET_SIZE)] = (robotTargetT >> 8) & 0xff;
 
     startIndex = endIndex; // Reset startIndex for next robot message
-    
+    PIDmode == false;
+
+    }
   }
   #ifdef DEBUG
     for(int i=0; i < sizeDataOut; i++){
