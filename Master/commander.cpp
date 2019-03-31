@@ -2,7 +2,6 @@
 #include <RF24.h>
 #include <Thread.h>
 #include <Arduino.h>
-#include <EEPROM.h>
 
 #include "_config.h"
 #include "_types.h"
@@ -12,16 +11,6 @@
 #include "motors.h"
 #include "commander.h"
 #include "controller.h"
-
-#define KP_ADDRESS_T 1
-#define KI_ADDRESS_T 2
-#define KD_ADDRESS_T 3
-#define LIMIT_ADDRESS_T 4
-
-#define KP_ADDRESS_Y 5
-#define KI_ADDRESS_Y 6
-#define KD_ADDRESS_Y 7
-#define LIMIT_ADDRESS_Y 8
 
 //
 // NRF24L01 Config
@@ -38,12 +27,6 @@ uint8_t robotId = 0;
 float robotYSpeed = 0;
 float robotTSpeed = 0;
 uint8_t myRobotId = 0;
-
-uint8_t op = 0;
-float kp;
-float ki;
-float kd;
-float limit;
 
 // Checks for communication and sets robot's state to IDDLE/ACTIVE
 void threadIddleDetection_run();
@@ -369,62 +352,37 @@ void threadNRF_run(){
     return;
   
   // Parse message
-  if(radioBufferIn[0] == 't' || radioBufferIn[0] == 'y'){
-    kp = radioBufferIn[1+ROBOT_PACKET_SIZE] | (radioBufferIn[2+ROBOT_PACKET_SIZE] << 8);
-    ki = radioBufferIn[3+ROBOT_PACKET_SIZE] | (radioBufferIn[4+ROBOT_PACKET_SIZE] << 8);
-    kd = radioBufferIn[5+ROBOT_PACKET_SIZE] | (radioBufferIn[6+ROBOT_PACKET_SIZE] << 8);
-    limit = radioBufferIn[7+ROBOT_PACKET_SIZE] | (radioBufferIn[8+ROBOT_PACKET_SIZE] << 8);
-    
-    if(radioBufferIn[0] == 't'){
-      EEPROM.write(KP_ADDRESS_T,kp);
-      EEPROM.write(KI_ADDRESS_T,ki);
-      EEPROM.write(KD_ADDRESS_T,kd);
-      EEPROM.write(LIMIT_ADDRESS_T,limit);
-    }
+  robotQuantity = radioBufferIn[0];
 
-    if(radioBufferIn[0] == 'y'){
-      EEPROM.write(KP_ADDRESS_Y,kp);
-      EEPROM.write(KI_ADDRESS_Y,ki);
-      EEPROM.write(KD_ADDRESS_Y,kd);
-      EEPROM.write(LIMIT_ADDRESS_Y,limit);
-    }
+  // Search for my id and data between received message 
+  for(int i=0; i < robotQuantity; i++){
+    robotId = radioBufferIn[1+(i*ROBOT_PACKET_SIZE)];
+    if(robotId == Robot::getRobotID()){
+      // If id Found gather other data
+      myRobotId = robotId;
+      activate = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
+      robotYSpeed = radioBufferIn[3+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[4+(i*ROBOT_PACKET_SIZE)] << 8);
+      robotTSpeed = radioBufferIn[5+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[6+(i*ROBOT_PACKET_SIZE)] << 8);
+      
+      robotYSpeed = robotYSpeed / FLOAT_MULTIPLIER;
+      robotTSpeed = robotTSpeed / FLOAT_MULTIPLIER;
 
-    radio.startListening();
-    Robot::lastTimeActive = millis();
-  }
-  else{
-    robotQuantity = radioBufferIn[0];
+      Controller::setTarget(0, robotYSpeed, robotTSpeed);
+      radio.startListening();
 
-    // Search for my id and data between received message 
-    for(int i=0; i < robotQuantity; i++){
-      robotId = radioBufferIn[1+(i*ROBOT_PACKET_SIZE)];
-      if(robotId == Robot::getRobotID()){
-        // If id Found gather other data
-        myRobotId = robotId;
-        activate = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
-        robotYSpeed = radioBufferIn[3+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[4+(i*ROBOT_PACKET_SIZE)] << 8);
-        robotTSpeed = radioBufferIn[5+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[6+(i*ROBOT_PACKET_SIZE)] << 8);
-        
-        robotYSpeed = robotYSpeed / FLOAT_MULTIPLIER;
-        robotTSpeed = robotTSpeed / FLOAT_MULTIPLIER;
+      // Force Disable robot if said
+      if(!activate){
+        Robot::setState(IDDLE);
+      }
 
-        Controller::setTarget(0, robotYSpeed, robotTSpeed);
-        radio.startListening();
-
-        // Force Disable robot if said
-        if(!activate){
-          Robot::setState(IDDLE);
+      // Got message. Robot is now Active if message was an action message
+      if(Robot::alarm == NONE){
+        if(Robot::state == IDDLE && activate){
+          Robot::setState(ACTIVE);
+          Robot::doBeep(2, 100);
         }
-
-        // Got message. Robot is now Active if message was an action message
-        if(Robot::alarm == NONE){
-          if(Robot::state == IDDLE && activate){
-            Robot::setState(ACTIVE);
-            Robot::doBeep(2, 100);
-          }
-          // Save timestamp of message
-          Robot::lastTimeActive = millis();
-        }
+        // Save timestamp of message
+        Robot::lastTimeActive = millis();
       }
     }
   }

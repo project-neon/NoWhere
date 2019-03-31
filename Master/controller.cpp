@@ -9,18 +9,6 @@
 #include "motors.h"
 #include "attitude.h"
 #include "controller.h"
-#include <EEPROM.h>
-
-
-#define KP_ADDRESS_T 1
-#define KI_ADDRESS_T 2
-#define KD_ADDRESS_T 3
-#define LIMIT_ADDRESS_T 4
-
-#define KP_ADDRESS_Y 5
-#define KI_ADDRESS_Y 6
-#define KD_ADDRESS_Y 7
-#define LIMIT_ADDRESS_Y 8
 
 //
 // Local variables/objects
@@ -44,10 +32,8 @@ Thread threadController(threadController_run, 2);
 //
 
 //  PIDs Parameters. 
-//PID pidY(6.5f, 0.0f, 0.02f, 0);
-//PID pidTheta(0.5f, 0.005f, 0.003f, 5000);
-PID pidY(EEPROM.read(KP_ADDRESS_Y), EEPROM.read(KI_ADDRESS_Y), EEPROM.read(KD_ADDRESS_Y), EEPROM.read(LIMIT_ADDRESS_Y));
-PID pidTheta(EEPROM.read(KP_ADDRESS_T), EEPROM.read(KI_ADDRESS_T), EEPROM.read(KD_ADDRESS_T), EEPROM.read(LIMIT_ADDRESS_T));
+PID pidY(6.5f, 0.0f, 0.02f, 0);
+PID pidTheta(0.5f, 0.005f, 0.003f, 5000);
 
 void resetControl();
 
