@@ -17,8 +17,6 @@
 int logs = 0;
 float pwrLeft;
 float pwrRight;
-//float errY;
-//float errTheta;
 float Controller::errY;
 float Controller::errTheta; 
 
@@ -32,8 +30,8 @@ Thread threadController(threadController_run, 2);
 //
 
 //  PIDs Parameters. 
-PID pidY(6.5f, 0.0f, 0.02f, 0);
-PID pidTheta(0.5f, 0.005f, 0.003f, 5000);
+PID pidY(3.5f, 0.1f, 0.02f, 5000);
+PID pidTheta(0.3f, 0.005f, 0.0f, 0);
 
 void resetControl();
 

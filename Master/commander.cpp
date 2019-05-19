@@ -332,7 +332,7 @@ void threadSerial_run(){
 void threadNRF_run(){
 
   static bool available;
-  static bool activate;
+  static byte activate;
 
   // Set own interval to 0ms
   threadNRF.setInterval(0);
@@ -368,6 +368,37 @@ void threadNRF_run(){
       robotTSpeed = robotTSpeed / FLOAT_MULTIPLIER;
 
       Controller::setTarget(0, robotYSpeed, robotTSpeed);
+
+
+      radio.stopListening();
+
+      //special mode to check Battery once in a while
+      if(activate==2 && !Robot::debug){
+        
+        float robotDataOut[2];
+        robotDataOut[0] = Robot::getRobotID();
+        robotDataOut[1] = Robot::vbat;
+        if(!radio.write(&robotDataOut,sizeof(robotDataOut))) LOG("failed");
+      }
+
+      //mode 3 to display errors
+      if(activate==2 && Robot::debug){
+        float robotDataOut[2];
+        robotDataOut[0] = Controller::errY;
+        robotDataOut[1] = Controller::errTheta;
+        
+        if(!radio.write(&robotDataOut,sizeof(robotDataOut))) LOG("failed");
+        //LOG(sizeof(robotDataOut));
+        for(int i=0; i < 2; i++){
+          LOG("Data ");
+          LOG(i);
+          LOG(" :");
+          LOG(robotDataOut[i]);ENDL;
+        }
+        
+      }
+      
+
       radio.startListening();
 
       // Force Disable robot if said
@@ -387,3 +418,12 @@ void threadNRF_run(){
     }
   }
 }
+/*
+void createPacket(){
+  uint8_t robotDataOut[4];
+  robotDataOut[0] = Controller::errY & 0xff;
+  robotDataOut[1] = (Controller::errY >> 8) & 0xff;
+
+  robotDataOut[2] = Controller::errTheta & 0xff;
+  robotDataOut[3] = (Controller::errTheta >> 8) & 0xff;
+}*/

@@ -70,6 +70,9 @@ bool shouldTransmit = true;
 
 int robotQuantity = 0;
 
+//Modes
+static bool PID_Mode = 0;
+
 void handleMessage();
 
 // Radio Objects
@@ -77,6 +80,7 @@ RF24 radio(PIN_RADIO_CE, PIN_RADIO_CSN);
 
 //Data Holders
 char serialDataIn[64];
+float robotBufferIn[2];
 
 // Robot addresses
 byte addresses[][6] = {"1Node","2Node"};
@@ -234,6 +238,14 @@ void handleMessage(){
     return;
   }
 
+  // Change mode to PID_Mode
+  if(serialDataIn[1] == ':' && serialDataIn[2] == 'p'){
+    PID_Mode = !PID_Mode;
+    LOG("PID_Mode mode is "); LOG(PID_Mode ? "ON" : "OFF"); ENDL;
+    return;
+  }
+
+
   
   for(int i=0; i < robotQuantity; i++){
     startIndex = message.indexOf(':', startIndex);
@@ -360,9 +372,29 @@ void handleMessage(){
   }
   
   radio.startListening();
+
+  // Check if timeout is needed
+  while(radio.available()) {
+      radio.read(&robotBufferIn, 8);
+    }
+
   
   #ifdef DEBUG
     LOG(" took ");
     LOG(millis() - took); ENDL;
+
+    if(PID_Mode){
+      LOG("ErrY: ");
+      LOG(robotBufferIn[0]);ENDL;
+      LOG("ErrTheta: ");
+      LOG(robotBufferIn[1]);ENDL;
+    }else{
+      LOG("Id: ");
+      LOG(robotBufferIn[0]);ENDL;
+      LOG("Bat: ");
+      LOG(robotBufferIn[1]);ENDL;
+
+    }
+
   #endif
 }
