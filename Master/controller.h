@@ -25,6 +25,14 @@ public:
   static float targetTheta;
   static float errY;
   static float errTheta;
+
+  static float pY;
+  static float iY;
+  static float dY;
+
+  static float pT;
+  static float iT;
+  static float dT;
   
   static bool enabled;
   static void scanErrors();

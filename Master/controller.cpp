@@ -30,13 +30,13 @@ Thread threadController(threadController_run, 2);
 //
 
 //PID Default Values
-const float Controller::pY = 3.5f;
-const float Controller::iY = 0.1f;
-const float Controller::dY = 0.02f;
+float Controller::pY = 3.5f;
+float Controller::iY = 0.1f;
+float Controller::dY = 0.02f;
 
-const float Controller::pT = 0.3f;
-const float Controller::iT = 0.005f;
-const float Controller::dT = 0.0f;
+float Controller::pT = 0.3f;
+float Controller::iT = 0.005f;
+float Controller::dT = 0.0f;
 
 //  PIDs Parameters. 
 PID pidY(Controller::pY, Controller::iY, Controller::dY, 5000);
@@ -68,12 +68,17 @@ void Controller::setTarget(float targetX, float targetY, float targetTheta){
   Controller::targetTheta = targetTheta;
 }
 
-// Function to set Constants
-void Controller::setPIDConstants(float kp, float ki, float kd, float iLimit){
+// Functions to set Constants
+void Controller::setPIDThetaConstants(float kp, float ki, float kd){
   pidTheta.kp = kp;
   pidTheta.ki = ki;
   pidTheta.kd = kd;
-  pidTheta.iLimit = iLimit;
+}
+
+void Controller::setPIDYThetaConstants(float kp, float ki, float kd){
+  pidY.kp = kp;
+  pidY.ki = ki;
+  pidY.kd = kd;
 }
 
 // Resets the PID and stop motors
