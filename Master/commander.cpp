@@ -333,6 +333,11 @@ void threadNRF_run(){
 
   static bool available;
   static byte activate;
+  static byte pidType;
+
+  static float constP = 0;
+  static float constI = 0;
+  static float constD = 0;
 
   // Set own interval to 0ms
   threadNRF.setInterval(0);
@@ -357,10 +362,39 @@ void threadNRF_run(){
   // Search for my id and data between received message 
   for(int i=0; i < robotQuantity; i++){
     robotId = radioBufferIn[1+(i*ROBOT_PACKET_SIZE)];
+    activate = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
+
+    if(activate==3) {
+        // 0 to linear and 1 to angular
+        pidType = radioBufferIn[3];
+
+        constP |= ((long)radioBufferIn[4]) << 24;
+        constP |= ((long)radioBufferIn[5]) << 16;
+        constP |= ((long)radioBufferIn[6]) << 8;
+        constP |= ((long)radioBufferIn[7]);
+
+        constI |= ((long)radioBufferIn[8]) << 24;
+        constI |= ((long)radioBufferIn[9]) << 16;
+        constI |= ((long)radioBufferIn[10]) << 8;
+        constI |= ((long)radioBufferIn[11]);
+
+        constD |= ((long)radioBufferIn[12]) << 24;
+        constD |= ((long)radioBufferIn[13]) << 16;
+        constD |= ((long)radioBufferIn[14]) << 8;
+        constD |= ((long)radioBufferIn[15]);
+
+        if (pidType==0) {
+          Controller::setPIDYConstants(constP, constI, constD);  
+        } else if (pidType==1) {
+          Controller::setPIDThetaConstants(constP, constI, constD);
+        }
+        
+        break;
+    }
+
     if(robotId == Robot::getRobotID()){
       // If id Found gather other data
       myRobotId = robotId;
-      activate = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
       robotYSpeed = radioBufferIn[3+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[4+(i*ROBOT_PACKET_SIZE)] << 8);
       robotTSpeed = radioBufferIn[5+(i*ROBOT_PACKET_SIZE)] | (radioBufferIn[6+(i*ROBOT_PACKET_SIZE)] << 8);
       
