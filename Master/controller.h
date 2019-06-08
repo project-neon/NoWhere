@@ -37,7 +37,8 @@ public:
   static bool enabled;
   static void scanErrors();
   static void setTarget(float targetX, float targetY, float targetTheta);
-  static void setPIDConstants(float kp, float ki, float kd, float iLimit);
+  static void setPIDThetaConstants(float kp, float ki, float kd);
+  static void setPIDYConstants(float kp, float ki, float kd);
 };
 
 

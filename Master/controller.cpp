@@ -75,7 +75,7 @@ void Controller::setPIDThetaConstants(float kp, float ki, float kd){
   pidTheta.kd = kd;
 }
 
-void Controller::setPIDYThetaConstants(float kp, float ki, float kd){
+void Controller::setPIDYConstants(float kp, float ki, float kd){
   pidY.kp = kp;
   pidY.ki = ki;
   pidY.kd = kd;
