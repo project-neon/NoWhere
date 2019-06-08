@@ -403,7 +403,6 @@ void threadNRF_run(){
 
       Controller::setTarget(0, robotYSpeed, robotTSpeed);
 
-
       radio.stopListening();
 
       //special mode to check Battery once in a while
