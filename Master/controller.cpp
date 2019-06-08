@@ -29,9 +29,18 @@ Thread threadController(threadController_run, 2);
 // PID's
 //
 
+//PID Default Values
+const float Controller::pY = 3.5f;
+const float Controller::iY = 0.1f;
+const float Controller::dY = 0.02f;
+
+const float Controller::pT = 0.3f;
+const float Controller::iT = 0.005f;
+const float Controller::dT = 0.0f;
+
 //  PIDs Parameters. 
-PID pidY(3.5f, 0.1f, 0.02f, 5000);
-PID pidTheta(0.3f, 0.005f, 0.0f, 0);
+PID pidY(Controller::pY, Controller::iY, Controller::dY, 5000);
+PID pidTheta(Controller::pT, Controller::iT, Controller::dT, 0);
 
 void resetControl();
 
