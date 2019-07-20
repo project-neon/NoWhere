@@ -368,20 +368,20 @@ void threadNRF_run(){
         // 0 to linear and 1 to angular
         pidType = radioBufferIn[3];
 
-        constP = (radioBufferIn[4])  | (radioBufferIn[5]) << 8 | (radioBufferIn[6]) << 16 | (radioBufferIn[7] << 24);
+        uint16_t constP_ = (radioBufferIn[4])  | (radioBufferIn[5]) << 8 | (radioBufferIn[6]) << 16 | (radioBufferIn[7] << 24);
 
-        constI = (radioBufferIn[8])  | (radioBufferIn[9]) << 8 | (radioBufferIn[10]) << 16 | (radioBufferIn[11] << 24);
+        uint16_t constI_ = (radioBufferIn[8])  | (radioBufferIn[9]) << 8 | (radioBufferIn[10]) << 16 | (radioBufferIn[11] << 24);
 
-        constD = (radioBufferIn[12]) | (radioBufferIn[13]) << 8 | (radioBufferIn[14]) << 16 | (radioBufferIn[15] << 24);
+        uint16_t constD_ = (radioBufferIn[12]) | (radioBufferIn[13]) << 8 | (radioBufferIn[14]) << 16 | (radioBufferIn[15] << 24);
         
-        constP = constP / PID_FLOAT_MULTIPLIER;
-        constI = constI / PID_FLOAT_MULTIPLIER;
-        constD = constD / PID_FLOAT_MULTIPLIER;
+        constP = constP_ / (PID_FLOAT_MULTIPLIER * 1.f);
+        constI = constI_ / (PID_FLOAT_MULTIPLIER * 1.f);
+        constD = constD_ / (PID_FLOAT_MULTIPLIER * 1.f);
         
 
-        LOG(constP); ENDL;
-        LOG(constI); ENDL;
-        LOG(constD); ENDL;
+        LOG(constP, 6); ENDL;
+        LOG(constI, 6); ENDL;
+        LOG(constD, 6); ENDL;
 
         if (pidType==0) {
           Controller::setPIDYConstants(constP, constI, constD);  
