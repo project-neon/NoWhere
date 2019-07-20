@@ -67,7 +67,7 @@ bool shouldTransmit = true;
 
 // Use the same value at the robot to decode the float values.
 #define FLOAT_MULTIPLIER    10.0
-#define PID_FLOAT_MULTIPLIER    1000.0
+#define PID_FLOAT_MULTIPLIER    10000.0
 
 int robotQuantity = 0;
 
@@ -319,7 +319,7 @@ void handleMessage(){
     }
     tmp = message.substring(_startIndex, _endIndex);
     tmpFloat = tmp.toFloat();
-    int16_t constP = tmpFloat * PID_FLOAT_MULTIPLIER ;
+    uint16_t constP = tmpFloat * PID_FLOAT_MULTIPLIER ;
     #ifdef DEBUG
       LOG("~constP: "); LOG(constP); ENDL;
     #endif
@@ -333,7 +333,7 @@ void handleMessage(){
     }
     tmp = message.substring(_startIndex, _endIndex);
     tmpFloat = tmp.toFloat();
-    int16_t constI = tmpFloat * PID_FLOAT_MULTIPLIER ;
+    uint16_t constI = tmpFloat * PID_FLOAT_MULTIPLIER ;
     #ifdef DEBUG
       LOG("~constI: "); LOG(constI); ENDL;
     #endif
@@ -347,7 +347,7 @@ void handleMessage(){
     }
     tmp = message.substring(_startIndex, _endIndex);
     tmpFloat = tmp.toFloat();
-    int16_t constD = tmpFloat * PID_FLOAT_MULTIPLIER ;
+    uint16_t constD = tmpFloat * PID_FLOAT_MULTIPLIER ;
     #ifdef DEBUG
       LOG("~constD: "); LOG(constD); ENDL;
     #endif
