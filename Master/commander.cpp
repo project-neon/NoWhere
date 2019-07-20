@@ -368,20 +368,20 @@ void threadNRF_run(){
         // 0 to linear and 1 to angular
         pidType = radioBufferIn[3];
 
-        constP |= ((long)radioBufferIn[4]) << 24;
-        constP |= ((long)radioBufferIn[5]) << 16;
-        constP |= ((long)radioBufferIn[6]) << 8;
-        constP |= ((long)radioBufferIn[7]);
+        constP = (radioBufferIn[4])  | (radioBufferIn[5]) << 8 | (radioBufferIn[6]) << 16 | (radioBufferIn[7] << 24);
 
-        constI |= ((long)radioBufferIn[8]) << 24;
-        constI |= ((long)radioBufferIn[9]) << 16;
-        constI |= ((long)radioBufferIn[10]) << 8;
-        constI |= ((long)radioBufferIn[11]);
+        constI = (radioBufferIn[8])  | (radioBufferIn[9]) << 8 | (radioBufferIn[10]) << 16 | (radioBufferIn[11] << 24);
 
-        constD |= ((long)radioBufferIn[12]) << 24;
-        constD |= ((long)radioBufferIn[13]) << 16;
-        constD |= ((long)radioBufferIn[14]) << 8;
-        constD |= ((long)radioBufferIn[15]);
+        constD = (radioBufferIn[12]) | (radioBufferIn[13]) << 8 | (radioBufferIn[14]) << 16 | (radioBufferIn[15] << 24);
+        
+        constP = constP / PID_FLOAT_MULTIPLIER;
+        constI = constI / PID_FLOAT_MULTIPLIER;
+        constD = constD / PID_FLOAT_MULTIPLIER;
+        
+
+        LOG(constP); ENDL;
+        LOG(constI); ENDL;
+        LOG(constD); ENDL;
 
         if (pidType==0) {
           Controller::setPIDYConstants(constP, constI, constD);  

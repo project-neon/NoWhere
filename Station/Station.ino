@@ -46,7 +46,7 @@
 // Make logging Easier
 #define LOG                 Serial.print
 #define ENDL                LOG("\n")
-//#define DEBUG               
+#define DEBUG               
 
 // Radio Harware Pins
 #define PIN_RADIO_CE       7
@@ -67,6 +67,7 @@ bool shouldTransmit = true;
 
 // Use the same value at the robot to decode the float values.
 #define FLOAT_MULTIPLIER    10.0
+#define PID_FLOAT_MULTIPLIER    1000.0
 
 int robotQuantity = 0;
 
@@ -132,8 +133,13 @@ void setup(){
   LOG("number of robots:");
   robotQuantity = EEPROM.read(ROBOT_QUANTITY_ADDRESS); 
   LOG(robotQuantity); ENDL;
+
   
   sizeDataOut = (ROBOT_PACKET_SIZE*robotQuantity)+1;
+
+  #ifdef DEBUG
+    sizeDataOut += 8;
+  #endif
 
   // Configure Output Pipe
   radio.openWritingPipe(addresses[0]);
@@ -243,6 +249,7 @@ void handleMessage(){
     PID_Mode = !PID_Mode;
     LOG("PID_Mode mode is "); LOG(PID_Mode ? "ON" : "OFF"); ENDL;
     return;
+
   }
 
 
@@ -285,7 +292,104 @@ void handleMessage(){
       LOG("~robotState: "); LOG(robotState); ENDL;
     #endif
 
-    ///////////////////////// Read target Linear(Y) Speed
+    // if to robot state 3 (pid mode) and parse message to send   :id ; activate(3); linear(0) ou angular(1) ; p ; i ; d: 
+
+    if (PID_Mode && robotState==3){
+
+       ///////////////////////// Read PID_setting
+
+    _startIndex = _endIndex + 1;
+    _endIndex = message.indexOf(';', _startIndex);
+    if(_endIndex < 0){
+      LOG("nok PID_setting\n");
+      return;
+    }
+    tmp = message.substring(_startIndex, _endIndex);
+    uint8_t PID_setting = tmp.toInt();
+    #ifdef DEBUG
+      LOG("~PID_setting: "); LOG(PID_setting); ENDL;
+    #endif
+
+      ///////////////////////// Read constP
+    _startIndex = _endIndex + 1;
+    _endIndex = message.indexOf(';', _startIndex);
+    if(_endIndex < 0){
+     LOG("nok constP \n"); 
+     return;
+    }
+    tmp = message.substring(_startIndex, _endIndex);
+    tmpFloat = tmp.toFloat();
+    int16_t constP = tmpFloat * PID_FLOAT_MULTIPLIER ;
+    #ifdef DEBUG
+      LOG("~constP: "); LOG(constP); ENDL;
+    #endif
+
+    ///////////////////////// Read constI
+    _startIndex = _endIndex + 1;
+    _endIndex = message.indexOf(';', _startIndex);
+    if(_endIndex < 0){
+     LOG("nok constI \n"); 
+     return;
+    }
+    tmp = message.substring(_startIndex, _endIndex);
+    tmpFloat = tmp.toFloat();
+    int16_t constI = tmpFloat * PID_FLOAT_MULTIPLIER ;
+    #ifdef DEBUG
+      LOG("~constI: "); LOG(constI); ENDL;
+    #endif
+
+    ///////////////////////// Read constD
+    _startIndex = _endIndex + 1;
+    _endIndex = message.indexOf(':', _startIndex);
+    if(_endIndex < 0){
+     LOG("nok constD \n"); 
+     return;
+    }
+    tmp = message.substring(_startIndex, _endIndex);
+    tmpFloat = tmp.toFloat();
+    int16_t constD = tmpFloat * PID_FLOAT_MULTIPLIER ;
+    #ifdef DEBUG
+      LOG("~constD: "); LOG(constD); ENDL;
+    #endif
+
+
+    // Number of Robots
+
+    radioDataOut[0] = robotQuantity;
+
+    // ID
+    radioDataOut[1+(i*ROBOT_PACKET_SIZE)] = robotId;
+
+    // IDDLE/ACTIVE
+    radioDataOut[2+(i*ROBOT_PACKET_SIZE)] = robotState;
+
+    // PID_setting
+    radioDataOut[3+(i*ROBOT_PACKET_SIZE)] = PID_setting;
+    
+    //  constP
+    radioDataOut[4+(i*ROBOT_PACKET_SIZE)] = constP & 0xff;
+    radioDataOut[5+(i*ROBOT_PACKET_SIZE)] = (constP >> 8) & 0xff;
+    radioDataOut[6+(i*ROBOT_PACKET_SIZE)] = (constP >> 16) & 0xff;
+    radioDataOut[7+(i*ROBOT_PACKET_SIZE)] = (constP >> 24) & 0xff;
+
+    //  constI
+    radioDataOut[8+(i*ROBOT_PACKET_SIZE)] = constI & 0xff;
+    radioDataOut[9+(i*ROBOT_PACKET_SIZE)] = (constI >> 8) & 0xff;
+    radioDataOut[10+(i*ROBOT_PACKET_SIZE)] = (constI >> 16) & 0xff;
+    radioDataOut[11+(i*ROBOT_PACKET_SIZE)] = (constI >> 24) & 0xff;
+
+    //  constD
+    radioDataOut[12+(i*ROBOT_PACKET_SIZE)] = constD & 0xff;
+    radioDataOut[13+(i*ROBOT_PACKET_SIZE)] = (constD >> 8) & 0xff;
+    radioDataOut[14+(i*ROBOT_PACKET_SIZE)] = (constD >> 16) & 0xff;
+    radioDataOut[15+(i*ROBOT_PACKET_SIZE)] = (constD >> 24) & 0xff;
+
+    startIndex = endIndex; // Reset startIndex for next robot message
+
+      
+    }else{
+
+      ///////////////////////// Read target Linear(Y) Speed
     _startIndex = _endIndex + 1;
     _endIndex = message.indexOf(';', _startIndex);
     if(_endIndex < 0){
@@ -313,6 +417,7 @@ void handleMessage(){
       LOG("~targetTheta: "); LOG(robotTargetT); ENDL;
     #endif
 
+
     // Number of Robots
 
     radioDataOut[0] = robotQuantity;
@@ -332,6 +437,9 @@ void handleMessage(){
     radioDataOut[6+(i*ROBOT_PACKET_SIZE)] = (robotTargetT >> 8) & 0xff;
 
     startIndex = endIndex; // Reset startIndex for next robot message
+
+    }
+      
     
   }
   #ifdef DEBUG

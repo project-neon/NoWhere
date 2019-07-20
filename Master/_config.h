@@ -69,6 +69,7 @@
 #define RADIO_PACKET_SIZE      32
 #define ROBOT_PACKET_SIZE      6
 #define FLOAT_MULTIPLIER       10.0
+#define PID_FLOAT_MULTIPLIER       1000.0
 
 //
 // EEPROM Addresses
