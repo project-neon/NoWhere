@@ -7,7 +7,6 @@
 
 #define PIN_LED1               12
 #define PIN_LED2               13
-
 #define PIN_BUZZER             A5
 
 #define PIN_M1_EN              5
@@ -69,7 +68,7 @@
 #define RADIO_PACKET_SIZE      32
 #define ROBOT_PACKET_SIZE      6
 #define FLOAT_MULTIPLIER       10.0
-#define PID_FLOAT_MULTIPLIER       1000.0
+#define PID_FLOAT_MULTIPLIER   10000.0
 
 //
 // EEPROM Addresses
