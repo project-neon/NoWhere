@@ -1,0 +1,9 @@
+
+# output of the serial_port.py
+robot_output.txt
+
+
+# ipython stuff
+
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
