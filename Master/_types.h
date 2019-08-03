@@ -9,6 +9,11 @@ enum RobotState{
   ACTIVE = 1
 };
 
+enum activate{
+  RESPONSIVE = 2,
+  PID_SETTING = 3
+};
+
 enum RobotAlarm{
   NONE = 0,
   ALARM_INIT,

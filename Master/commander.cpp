@@ -352,6 +352,29 @@ void threadNRF_run(){
     radio.read(&radioBufferIn, RADIO_PACKET_SIZE);
   }
 
+  
+//mode RESPONSIVE to display real time erros errors to station
+
+  if(activate==RESPONSIVE && Robot::debug && Controller::NewData){
+    Controller::NewData = false;
+    radio.stopListening();
+        float robotDataOut[2];
+        robotDataOut[0] = Controller::errY;
+        robotDataOut[1] = Controller::errTheta;
+        
+        if(!radio.write(&robotDataOut,sizeof(robotDataOut))) {}/*LOG("failed");
+        //LOG(sizeof(robotDataOut));
+        for(int i=0; i < 2; i++){
+          LOG("Data ");
+          LOG(i);
+          LOG(" :");
+          LOG(robotDataOut[i]);ENDL;
+        }*/
+        radio.startListening();
+      }
+
+
+
   // Skip if no data received
   if(!available)
     return;
@@ -364,7 +387,7 @@ void threadNRF_run(){
     robotId = radioBufferIn[1+(i*ROBOT_PACKET_SIZE)];
     activate = radioBufferIn[2+(i*ROBOT_PACKET_SIZE)];
 
-    if(activate==3) {
+    if(activate== PID_SETTING && Robot::debug) {
         // 0 to linear and 1 to angular
         pidType = radioBufferIn[3];
 
@@ -377,11 +400,22 @@ void threadNRF_run(){
         constP = constP_ / (PID_FLOAT_MULTIPLIER * 1.f);
         constI = constI_ / (PID_FLOAT_MULTIPLIER * 1.f);
         constD = constD_ / (PID_FLOAT_MULTIPLIER * 1.f);
-        
+        constD = constD*100;
+        constP = constP*100;
 
         LOG(constP, 6); ENDL;
         LOG(constI, 6); ENDL;
         LOG(constD, 6); ENDL;
+
+        radio.stopListening();
+        float robotDataOut[3];
+        robotDataOut[0] = constP;
+        robotDataOut[1] = constI;
+        robotDataOut[2] = constD;
+        
+        if(!radio.write(&robotDataOut,sizeof(robotDataOut))) {}
+        
+        radio.startListening();
 
         if (pidType==0) {
           Controller::setPIDYConstants(constP, constI, constD);  
@@ -406,7 +440,7 @@ void threadNRF_run(){
       radio.stopListening();
 
       //special mode to check Battery once in a while
-      if(activate==2 && !Robot::debug){
+      if(activate==RESPONSIVE && !Robot::debug){
         
         float robotDataOut[2];
         robotDataOut[0] = Robot::getRobotID();
@@ -414,23 +448,10 @@ void threadNRF_run(){
         if(!radio.write(&robotDataOut,sizeof(robotDataOut))) LOG("failed");
       }
 
-      //mode 3 to display errors
-      if(activate==2 && Robot::debug){
-        float robotDataOut[2];
-        robotDataOut[0] = Controller::errY;
-        robotDataOut[1] = Controller::errTheta;
-        
-        if(!radio.write(&robotDataOut,sizeof(robotDataOut))) LOG("failed");
-        //LOG(sizeof(robotDataOut));
-        for(int i=0; i < 2; i++){
-          LOG("Data ");
-          LOG(i);
-          LOG(" :");
-          LOG(robotDataOut[i]);ENDL;
-        }
-        
+      if(activate==PID_SETTING && !Robot::debug){
+        Robot::debug = !Robot::debug;
       }
-      
+
 
       radio.startListening();
 
@@ -451,12 +472,4 @@ void threadNRF_run(){
     }
   }
 }
-/*
-void createPacket(){
-  uint8_t robotDataOut[4];
-  robotDataOut[0] = Controller::errY & 0xff;
-  robotDataOut[1] = (Controller::errY >> 8) & 0xff;
 
-  robotDataOut[2] = Controller::errTheta & 0xff;
-  robotDataOut[3] = (Controller::errTheta >> 8) & 0xff;
-}*/

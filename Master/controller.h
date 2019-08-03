@@ -25,6 +25,7 @@ public:
   static float targetTheta;
   static float errY;
   static float errTheta;
+  
 
   static float pY;
   static float iY;
@@ -34,6 +35,7 @@ public:
   static float iT;
   static float dT;
   
+  static bool NewData;
   static bool enabled;
   static void scanErrors();
   static void setTarget(float targetX, float targetY, float targetTheta);

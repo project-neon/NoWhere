@@ -177,7 +177,9 @@ void threadBeeper_run(){
   }
 
   if(lastIsBeeping != isBeeping){
-    digitalWrite(PIN_BUZZER, isBeeping);
+    #ifndef MUTED
+      digitalWrite(PIN_BUZZER, isBeeping);
+    #endif
     lastIsBeeping = isBeeping;
   }
 }

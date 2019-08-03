@@ -50,8 +50,8 @@
 #define BAT_DROP               0.26
 #define VBAT_VOLTAGE(adc)      (adc / (1023 / 5.0)) * (BAT_R1 + BAT_R2) * (1.0 / BAT_R2) + BAT_DROP
 
-#define VBAT_ALARMED           6.90
-#define VBAT_WARNED            7.10
+#define VBAT_ALARMED           6.70
+#define VBAT_WARNED            6.90
 #define VBAT_USB               5.10
 
 //
@@ -75,5 +75,11 @@
 //
 #define EEPROM_ROBOT_ID        0x10
 #define EEPROM_CHANNEL         0x20
+
+//
+// SOUND config
+//
+//#define MUTED
+
 
 #endif

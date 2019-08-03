@@ -137,6 +137,7 @@ void setup(){
   
   sizeDataOut = (ROBOT_PACKET_SIZE*robotQuantity)+1;
 
+// when DEBUG is on increase sizeDataOut to send PID constants to robot
   #ifdef DEBUG
     sizeDataOut += 8;
   #endif
@@ -211,6 +212,34 @@ void loop(){
   if(newPacket){
     handleMessage();
   }
+
+  //
+  // Step 3: If new radio data available, receive 
+  //
+
+  // Check if timeout is needed
+    while(radio.available()) {
+        radio.read(&robotBufferIn, sizeof(robotBufferIn));
+    #ifdef DEBUG
+      
+        if(PID_Mode){
+          //LOG("ErrY: ");
+          LOG(robotBufferIn[0]);
+          LOG(";");
+          LOG(robotBufferIn[1]);ENDL;
+        }else{
+          LOG("Id: ");
+          LOG(robotBufferIn[0]);ENDL;
+          LOG("Bat: ");
+          LOG(robotBufferIn[1]);ENDL;
+
+      }
+
+    #endif
+   
+    }
+
+
 }
 
 void handleMessage(){ 
@@ -479,30 +508,16 @@ void handleMessage(){
     } 
   }
   
-  radio.startListening();
-
-  // Check if timeout is needed
-  while(radio.available()) {
-      radio.read(&robotBufferIn, 8);
-    }
-
+  radio.startListening(); 
   
   #ifdef DEBUG
     LOG(" took ");
     LOG(millis() - took); ENDL;
-
-    if(PID_Mode){
-      LOG("ErrY: ");
-      LOG(robotBufferIn[0]);ENDL;
-      LOG("ErrTheta: ");
-      LOG(robotBufferIn[1]);ENDL;
-    }else{
-      LOG("Id: ");
-      LOG(robotBufferIn[0]);ENDL;
-      LOG("Bat: ");
-      LOG(robotBufferIn[1]);ENDL;
-
-    }
-
   #endif
+
+    
+  
+  
+
+
 }

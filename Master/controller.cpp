@@ -17,13 +17,14 @@
 int logs = 0;
 float pwrLeft;
 float pwrRight;
+bool Controller::NewData = false;
 float Controller::errY;
 float Controller::errTheta; 
 
 bool Controller::enabled = true;
 
 void threadController_run();
-Thread threadController(threadController_run, 2);
+Thread threadController(threadController_run, 10);
 
 //
 // PID's
@@ -90,6 +91,10 @@ void resetControl(){
   pwrRight = 0;
 }
 
+  static float lastTheta = 0;
+  static float rateTheta = 0;
+  static float rateSpeed = 0;
+
 // ====================================
 //          THREAD CALLBACKS
 // ====================================
@@ -98,9 +103,6 @@ void threadController_run(){
 
   static unsigned long lastNow;
   static unsigned long now;
-  static float lastTheta = 0;
-  static float rateTheta = 0;
-  static float rateSpeed = 0;
   static float dt = 0;
   static bool wasOnFloor = true;
 
@@ -199,7 +201,12 @@ void threadController_run(){
 
   Motors::setPower(pwrLeft, pwrRight);
   
-  Controller::errY = pow(Controller::targetY - rateSpeed, 2);
-  Controller::errTheta = pow(Controller::targetTheta - rateTheta, 2);
+  //Controller::errY = pow(Controller::targetY - rateSpeed, 2);
+  //Controller::errTheta = pow(Controller::targetTheta - rateTheta, 2);
+
+  Controller::errY = rateSpeed; //not realy
+  Controller::errTheta = rateTheta; //not realy
+
+  Controller::NewData = true;
 
 }
