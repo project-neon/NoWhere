@@ -36,8 +36,8 @@ float Controller::iY = 0.1f;
 float Controller::dY = 0.02f;
 
 float Controller::pT = 0.3f;
-float Controller::iT = 0.005f;
-float Controller::dT = 0.0f;
+float Controller::iT = 0.0f;
+float Controller::dT = 0.01f;
 
 //  PIDs Parameters. 
 PID pidY(Controller::pY, Controller::iY, Controller::dY, 5000);

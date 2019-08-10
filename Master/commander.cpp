@@ -424,7 +424,11 @@ void threadNRF_run(){
         }
         
         break;
+    }else if(activate==PID_SETTING)
+    {
+      Robot::debug = !Robot::debug;
     }
+    
 
     if(robotId == Robot::getRobotID()){
       // If id Found gather other data
