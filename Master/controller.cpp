@@ -31,8 +31,8 @@ Thread threadController(threadController_run, 10);
 //
 
 //PID Default Values
-float Controller::pY = 3.5f;
-float Controller::iY = 0.1f;
+float Controller::pY = 13.0f;
+float Controller::iY = 0.0f;
 float Controller::dY = 0.02f;
 
 float Controller::pT = 0.3f;
